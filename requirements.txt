@@ -1,0 +1,26 @@
+# Phase 1a: Scanner (COMPLETE)
+pillow>=10.2.0  # Image loading and processing
+pillow-heif>=0.14.0  # HEIC/HEIF support for Apple photos
+imagehash>=4.3.1  # Perceptual hashing for near-duplicate detection
+tqdm>=4.66.0  # Progress bars
+
+# Phase 1b: ML Embeddings (CURRENT)
+torch>=2.1.0
+torchvision>=0.16.0
+open_clip_torch>=2.20.0
+numpy>=1.24.0
+
+# Phase 2: Vector Search (Install when ready)
+# faiss-cpu>=1.7.4
+
+# Phase 3: API and UI (CURRENT)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+jinja2>=3.1.0
+
+# Development Tools (Optional)
+# pytest>=7.4.0
+# black>=23.11.0
+# ruff>=0.1.6
