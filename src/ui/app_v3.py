@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 import json
+import shutil
 import subprocess
 import asyncio
 
@@ -3085,7 +3086,8 @@ def load_data(
         # Detect demo mode for main app (not applicable for demo endpoint)
         if not is_demo and scan_data:
             first_path = scan_data[0].get('file_path', '')
-            DEMO_MODE = 'Photos Library.photoslibrary' not in first_path
+            #DEMO_MODE = 'Photos Library.photoslibrary' not in first_path
+            DEMO_MODE = is_demo
             mode_str = "DEMO MODE (directory)" if DEMO_MODE else "Photos Library mode"
             logger.info(f"Detected {mode_str}")
     
