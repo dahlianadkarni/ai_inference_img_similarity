@@ -9,7 +9,7 @@ You now have a **production-grade client-service architecture** for your photo d
 ```
 ┌──────────────────────┐         ┌──────────────────────┐
 │   Client/UI          │         │ Inference Service    │
-│  (Port 8000)         │─HTTP──→ │  (Port 8001)         │
+│  (Port 8000)         │─HTTP──→ │  (Port 8002)         │
 │                      │         │                      │
 │ • Scan photos       │         │ • Load model         │
 │ • Call service      │         │ • Generate embeddings│
@@ -51,6 +51,12 @@ You now have a **production-grade client-service architecture** for your photo d
 python start_services.py
 ```
 Opens your browser to http://127.0.0.1:8000
+
+**Demo Mode** (use demo dataset on port 8001; inference service runs on port 8002):
+```bash
+python start_services.py --ui-demo
+# Opens at http://127.0.0.1:8001 (demo UI). Inference service: http://127.0.0.1:8002
+```
 
 ### Separate Terminals (Better for Development)
 ```bash
@@ -140,7 +146,7 @@ print('Model:', client.get_model_info())
 ```
 
 ### 2. See the API Docs
-With service running, visit: http://127.0.0.1:8001/docs
+With service running, visit: http://127.0.0.1:8002/docs
 
 ### 3. Measure Performance
 - Time local mode: `time python -m src.embedding.main_v2 ... --mode local`
@@ -197,10 +203,10 @@ src/grouping/                (unchanged)
 ### "Connection refused" on startup
 - Service takes ~5-10s to load model on first run
 - Wait a bit and try again
-- Check: `curl http://127.0.0.1:8001/health`
+- Check: `curl http://127.0.0.1:8002/health`
 
 ### Can't embed photos
-- Check if service is running: `curl http://127.0.0.1:8001/health`
+- Check if service is running: `curl http://127.0.0.1:8002/health`
 - Check if scan results exist: `ls -la scan_for_embeddings.json`
 - Try local mode: `--mode local`
 
@@ -264,7 +270,7 @@ python -m src.embedding.main_v2 scan_for_embeddings.json --mode local # local
 python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote # remote
 
 # API docs (while service running)
-open http://127.0.0.1:8001/docs
+open http://127.0.0.1:8002/docs
 
 # Health check
 curl http://127.0.0.1:8001/health

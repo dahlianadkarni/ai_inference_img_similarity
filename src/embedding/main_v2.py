@@ -114,7 +114,7 @@ def generate_embeddings_local(
 
 def generate_embeddings_remote(
     scan_data: list,
-    service_url: str = "http://127.0.0.1:8001",
+    service_url: str = "http://127.0.0.1:8002",
     model_name: str = "ViT-B-32",
     pretrained: str = "openai",
     batch_size: int = 32,
@@ -228,7 +228,7 @@ def main():
     parser.add_argument(
         "--service-url",
         type=str,
-        default="http://127.0.0.1:8001",
+        default="http://127.0.0.1:8002",
         help="URL of inference service (for remote mode)",
     )
     parser.add_argument(

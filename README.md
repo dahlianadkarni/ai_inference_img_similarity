@@ -30,10 +30,17 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
+# Start UI only (port 8000)
 python -m src.ui.main
+
+# Or start both inference + UI
+python start_services.py
+
+# Or use demo dataset (UI on port 8001; inference runs on port 8002)
+python start_services.py --ui-demo
 ```
 
-Open http://127.0.0.1:8000.
+Open http://127.0.0.1:8000 (or the demo UI at http://127.0.0.1:8001). The inference service runs on http://127.0.0.1:8002.
 
 ## End-to-End Workflow (How the Pieces Fit)
 

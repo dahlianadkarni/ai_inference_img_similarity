@@ -5,7 +5,7 @@
 | Feature | Main Server | Demo Server |
 |---------|------------|-------------|
 | **Port** | 8000 | 8001 |
-| **URL** | http://127.0.0.1:8000 | http://127.0.0.1:8001 |
+| **URL** | http://127.0.0.1:8000 | http://127.0.0.1:8001 (demo UI) |
 | **Data Source** | Photos Library (iCloud) | Directory (~/demo_photos) |
 | **Scan Files** | scan_for_embeddings.json | scan_results_demo.json |
 | **Embeddings** | embeddings/ | embeddings_demo/ |
@@ -41,6 +41,8 @@ python start_demo_server.py
 # 4. Start demo server
 python start_demo_server.py
 ```
+
+Note: When using the demo UI the inference service is still started (port 8002) so remote embedding generation is available.
 
 ## Benefits
 

@@ -61,6 +61,11 @@ def main():
         help="Port to bind to",
     )
     parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Start UI in demo mode (use demo dataset)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging",
@@ -77,12 +82,13 @@ def main():
         logger.error("Run embedding generation first: python -m src.embedding.main ...")
         sys.exit(1)
     
-    # Load data into app
+    # Load data into app (support demo mode)
     load_data(
-        args.scan_results, 
-        args.similar_groups, 
+        args.scan_results,
+        args.similar_groups,
         args.embeddings_dir,
-        args.path_mapping if args.path_mapping.exists() else None
+        args.path_mapping if args.path_mapping.exists() else None,
+        is_demo=args.demo,
     )
     
     # Start server

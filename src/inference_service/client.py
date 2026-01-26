@@ -22,7 +22,7 @@ class InferenceClient:
     
     def __init__(
         self,
-        service_url: str = "http://127.0.0.1:8001",
+        service_url: str = "http://127.0.0.1:8002",
         timeout: float = 300.0,
     ):
         """

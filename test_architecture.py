@@ -82,11 +82,11 @@ def test_inference_client():
     print("="*60)
     
     try:
-        client = InferenceClient("http://127.0.0.1:8001")
+        client = InferenceClient("http://127.0.0.1:8002")
         
         # Test health check (will fail if service not running, which is OK)
         print("✓ Created InferenceClient")
-        print(f"  Service URL: http://127.0.0.1:8001")
+        print(f"  Service URL: http://127.0.0.1:8002")
         print(f"  Health check: ", end="")
         
         if client.health_check():

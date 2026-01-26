@@ -11,7 +11,7 @@ This isn't just a refactor for refactor's sake. It's the foundational architectu
 
 ## What Changed
 
-### New Components
+Service (http://127.0.0.1:8002)
 
 1. **Inference Service** (`src/inference_service/`)
    - `server.py` — FastAPI application that serves embeddings over HTTP
@@ -19,12 +19,17 @@ This isn't just a refactor for refactor's sake. It's the foundational architectu
    - Clean, stateless HTTP API
    - Handles all model loading and inference
 
+```bash
+python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote --service-url http://127.0.0.1:8002
+```
 2. **Refactored Embedding Generation** (`src/embedding/main_v2.py`)
    - Three modes: `local`, `remote`, or `auto`
    - Can call inference service or generate embeddings inline
    - Backward compatible with existing code
 
 3. **Startup Scripts**
+# Health check
+curl http://127.0.0.1:8002/health
    - `start_services.py` — Start both services with one command
    - `test_architecture.py` — Validate all components
 
@@ -84,7 +89,7 @@ Client (http://127.0.0.1:8000)
    │ HTTP/POST
    │ images (base64 or multipart)
    ↓
-Service (http://127.0.0.1:8001)
+Service (http://127.0.0.1:8002)
    ↓
    │ HTTP/200
    │ embeddings (JSON array)
@@ -107,7 +112,7 @@ python -m src.embedding.main_v2 scan_for_embeddings.json --mode local
 ### Remote Mode (New)
 
 ```bash
-python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote --service-url http://127.0.0.1:8001
+python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote --service-url http://127.0.0.1:8002
 ```
 
 - Calls inference service over HTTP
@@ -257,8 +262,8 @@ By building this now, you're learning the foundational mental model. When you en
 
 ### Service won't start
 ```bash
-# Check if port 8001 is in use
-lsof -i :8001
+# Check if port 8002 is in use
+lsof -i :8002
 
 # Or use different port
 python -m src.inference_service.server --port 8002
@@ -266,7 +271,7 @@ python -m src.inference_service.server --port 8002
 
 ### Health check fails
 ```bash
-curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:8002/health
 ```
 
 ### Slow first run

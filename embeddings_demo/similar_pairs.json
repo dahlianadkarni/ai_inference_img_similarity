@@ -1,0 +1,14 @@
+[
+  {
+    "file1": "/Users/dnadkarn/demo_photos/1026685415_0431cbf574.jpg",
+    "file2": "/Users/dnadkarn/demo_photos/2477121456_1ac5c6d3e4.jpg",
+    "similarity": 0.8587335348129272,
+    "group_id": 0
+  },
+  {
+    "file1": "/Users/dnadkarn/demo_photos/408573233_1fff966798.jpg",
+    "file2": "/Users/dnadkarn/demo_photos/1466479163_439db855af.jpg",
+    "similarity": 0.8890131711959839,
+    "group_id": 1
+  }
+]

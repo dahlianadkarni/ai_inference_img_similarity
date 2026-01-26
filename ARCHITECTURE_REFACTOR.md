@@ -24,7 +24,7 @@ Even though both run on your Mac initially, they communicate via a clean HTTP bo
 │ - Accepts images via HTTP (base64 or files)     │
 │ - Returns embeddings as JSON                     │
 │ - No knowledge of photos, groups, or metadata   │
-│ Port: 8001                                       │
+│ Port: 8002                                       │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -90,7 +90,7 @@ Usage:
 ```python
 from src.inference_service.client import InferenceClient
 
-client = InferenceClient("http://127.0.0.1:8001")
+client = InferenceClient("http://127.0.0.1:8002")
 embeddings = client.embed_images_files(image_paths)  # Returns numpy array
 ```
 
@@ -109,7 +109,7 @@ python -m src.embedding.main_v2 scan_for_embeddings.json --mode local
 - Calls inference service
 - Good for: Distributed setup, reusing service across clients
 ```bash
-python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote --service-url http://127.0.0.1:8001
+python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote --service-url http://127.0.0.1:8002
 ```
 
 **Auto Mode** (`--mode auto`) — Default
@@ -130,7 +130,7 @@ python start_services.py
 ```
 
 This:
-1. Starts inference service on `http://127.0.0.1:8001`
+1. Starts inference service on `http://127.0.0.1:8002`
 2. Waits for it to become ready
 3. Starts UI client on `http://127.0.0.1:8000`
 4. Opens browser to client
@@ -145,7 +145,7 @@ source venv/bin/activate
 python -m src.inference_service.server
 ```
 ```
-INFO:     Uvicorn running on http://127.0.0.1:8001
+INFO:     Uvicorn running on http://127.0.0.1:8002
 ```
 
 **Terminal 2 — UI Client:**
@@ -186,8 +186,8 @@ else:
 **Remote (new):**
 ```bash
 python -m src.embedding.main_v2 scan_for_embeddings.json \
-  --mode remote \
-  --service-url http://127.0.0.1:8001
+   --mode remote \
+   --service-url http://127.0.0.1:8002
 ```
 
 **Local (original):**

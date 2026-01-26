@@ -188,10 +188,10 @@ python -m src.embedding.main_v2 scan.json --mode remote
 python -m src.embedding.main_v2 scan.json
 
 # Health check
-curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:8002/health
 
 # API docs (while running)
-open http://127.0.0.1:8001/docs
+open http://127.0.0.1:8002/docs
 ```
 
 ## ❓ Why This Matters

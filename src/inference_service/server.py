@@ -179,7 +179,7 @@ def create_app() -> FastAPI:
             embeddings = InferenceService.embed_images(
                 images,
                 model_name=request.model_name,
-                pretrained=request.model_name,
+                pretrained=request.pretrained,
                 batch_size=32,
             )
             
@@ -284,7 +284,7 @@ def main():
     )
     
     app = create_app()
-    uvicorn.run(app, host="127.0.0.1", port=8001)
+    uvicorn.run(app, host="127.0.0.1", port=8002)
 
 
 if __name__ == "__main__":

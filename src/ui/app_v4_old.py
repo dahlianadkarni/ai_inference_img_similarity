@@ -44,7 +44,7 @@ app = FastAPI(
 SERVER_MODE: str = "main"  # "main" or "demo"
 
 # Inference service URL (configurable via environment variable)
-INFERENCE_SERVICE_URL: str = os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8001")
+INFERENCE_SERVICE_URL: str = os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8002")
 
 # Global state - Main (Photos Library)
 SIMILAR_GROUPS: List[dict] = []

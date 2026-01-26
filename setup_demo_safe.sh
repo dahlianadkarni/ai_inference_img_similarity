@@ -108,7 +108,6 @@ if [ "$HAS_PHOTOS_SCAN" = true ]; then
 fi
 echo "  🎬 Demo scan: scan_results_demo.json, embeddings_demo/"
 echo ""
-echo "Start demo server:"
-echo "  python start_demo_server.py"
-echo ""
-echo "Demo will be at: http://127.0.0.1:8001"
+echo "Start demo server (recommended):"
+echo "  python start_services.py --ui-demo"
+echo "  → This starts the demo UI (http://127.0.0.1:8001) and the inference service (http://127.0.0.1:8002)."

@@ -3,6 +3,54 @@
 Separates Scanner and AI Inference/Embedding into distinct workflow tabs.
 - Scanner Tab: Step 1 controls + scan results (exact & perceptual duplicates)
 - AI Tab: Step 2 controls + AI results + feedback section
+            // Clear scan results (demo or main depending on server mode)
+            async function clearScanResults() {
+                if (!confirm('Clear scan results and cache?')) return;
+                try {
+                    const response = await fetch('/api/clear-scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        showStatus('scan', 'error', err.detail || 'Failed to clear scan results');
+                        return;
+                    }
+
+                    // Reset UI state
+                    scanDuplicates = null;
+                    scanDataMap = {};
+                    groups = [];
+                    document.getElementById('scan-info').style.display = 'none';
+                    document.getElementById('scanner-count').textContent = 'Step 1';
+                    document.getElementById('ai-count').textContent = 'Step 2';
+
+                    const aiTab = document.getElementById('tab-ai');
+                    aiTab.disabled = true;
+                    switchTab('scanner');
+
+                    document.getElementById('scanner-results').innerHTML = `
+                        <div class="empty-state">
+                            <h3>📊 No scanner results yet</h3>
+                            <p>Click "Start Scan" above to find exact and perceptual duplicates.</p>
+                        </div>`;
+                    document.getElementById('ai-results').innerHTML = `
+                        <div class="empty-state">
+                            <h3>🧠 No AI results yet</h3>
+                            <p>Run "Generate Embeddings" after scanning to find AI-detected similar groups.</p>
+                        </div>`;
+
+                    showStatus('scan', 'success', 'Scan results cleared');
+                    setTimeout(() => {
+                        document.getElementById('processing-status-scan').classList.remove('active');
+                    }, 1500);
+                } catch (err) {
+                    console.error('Error clearing scan:', err);
+                    showStatus('scan', 'error', 'Error clearing scan results');
+                }
+            }
+
 """
 
 import logging
@@ -33,7 +81,7 @@ app = FastAPI(
 SERVER_MODE: str = "main"  # "main" or "demo"
 
 # Inference service URL (configurable via environment variable)
-INFERENCE_SERVICE_URL: str = os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8001")
+INFERENCE_SERVICE_URL: str = os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8002")
 
 # Global state - Main (Photos Library)
 SIMILAR_GROUPS: List[dict] = []
@@ -498,6 +546,7 @@ async def root():
                         </select>
                         
                         <button class="btn btn-success" onclick="startScan()" id="btn-scan">▶️ Start Scan</button>
+                        <button class="btn" onclick="clearScanResults()" id="btn-clear-scan" style="background: #a2aaad; color: white;">🗑️ Clear Scan</button>
                     </div>
                     
                     <div id="scan-info" style="display: none; background: #f5f5f7; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0; font-size: 0.875rem; color: #86868b;">
@@ -528,9 +577,23 @@ async def root():
                         Analyze all scanned photos with AI to find visually similar images. The AI discovers images that aren't exact or perceptual matches but share visual characteristics.
                     </p>
                     
+                    <div class="control-row" style="align-items: flex-start; gap: 1rem;">
+                        <label style="font-weight: 600; color: #1d1d1f;">Estimate (local only):</label>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                            <button class="btn btn-special" onclick="estimateEmbeddings()" id="btn-estimate">⏱️ Estimate Time</button>
+                            <span style="font-size: 0.75rem; color: #86868b; max-width: 360px;">Uses local throughput only and ignores similarity threshold or inference mode.</span>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label style="font-weight: 600; color: #1d1d1f;">Similarity Threshold:</label>
+                        <input id="similarity-threshold" type="number" class="control-input" value="0.85" step="0.01" min="0" max="1" style="width: 100px;">
+                        <span style="font-size: 0.75rem; color: #86868b; max-width: 300px;">(Higher = more strict; 0.99 = nearly identical, 0.50 = loosely similar)</span>
+                    </div>
+
                     <div class="control-row">
                         <label style="font-weight: 600; color: #1d1d1f;">Inference Mode:</label>
-                        <div style="display: flex; gap: 1rem;">
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
                                 <input type="radio" name="inference-mode" value="auto">
                                 Auto (try remote, fallback local)
@@ -543,16 +606,9 @@ async def root():
                                 <input type="radio" name="inference-mode" value="local">
                                 Local (on this Mac)
                             </label>
+                            <button class="btn btn-success" onclick="startEmbeddings()" id="btn-embeddings">🧠 Generate Embeddings</button>
+                            <button class="btn" onclick="clearEmbeddings()" id="btn-clear-embeddings" style="background: #a2aaad; color: white;">🗑️ Clear Results</button>
                         </div>
-                    </div>
-                    
-                    <div class="control-row">
-                        <label style="font-weight: 600; color: #1d1d1f;">Similarity Threshold:</label>
-                        <input id="similarity-threshold" type="number" class="control-input" value="0.85" step="0.01" min="0" max="1" style="width: 100px;">
-                        <span style="font-size: 0.75rem; color: #86868b; max-width: 300px;">(Higher = more strict; 0.99 = nearly identical, 0.50 = loosely similar)</span>
-                        
-                        <button class="btn btn-special" onclick="estimateEmbeddings()" id="btn-estimate">⏱️ Estimate Time</button>
-                        <button class="btn btn-success" onclick="startEmbeddings()" id="btn-embeddings">🧠 Generate Embeddings</button>
                     </div>
                     
                     <div id="estimate-results" style="display: none; margin-top: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border: 1px solid #1976d2; color: #1565c0; font-size: 0.875rem;"></div>
@@ -642,8 +698,8 @@ async def root():
                         document.getElementById('scan-exact-dupes').textContent = info.exact_duplicate_groups;
                         document.getElementById('scan-perceptual-dupes').textContent = info.perceptual_duplicate_groups;
                         
-                        // Load and display results
-                        loadScanResults();
+                        // Load and display results; auto-switch to AI if scan data exists
+                        loadScanResults(true);
                     }
                 } catch (error) {
                     console.error('Failed to load scan info:', error);
@@ -651,7 +707,7 @@ async def root():
             }
             
             // Load scan duplicates and display results
-            async function loadScanResults() {
+            async function loadScanResults(autoSwitchToAI = false) {
                 try {
                     const response = await fetch('/api/scan-duplicates');
                     scanDuplicates = await response.json();
@@ -670,8 +726,12 @@ async def root():
                         (scanDuplicates && scanDuplicates.perceptual_groups ? scanDuplicates.perceptual_groups.length : 0);
                     document.getElementById('scanner-count').textContent = totalGroups + ' groups';
                     
-                    // Enable AI tab
-                    document.getElementById('tab-ai').disabled = false;
+                    // Enable AI tab and optionally switch to it when scan data is present
+                    const aiTab = document.getElementById('tab-ai');
+                    aiTab.disabled = false;
+                    if (autoSwitchToAI) {
+                        switchTab('ai');
+                    }
                     
                     renderScannerResults();
                 } catch (error) {
@@ -932,9 +992,35 @@ async def root():
                 }
             }
             
+                    // Clear embeddings (AJAX)
+                    async function clearEmbeddings() {
+                        if (!confirm('Clear all embedding results and groups?')) return;
+                        try {
+                            const response = await fetch('/api/clear-embeddings', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+
+                            if (!response.ok) {
+                                const err = await response.json();
+                                showStatus('ai', 'error', err.detail || 'Failed to clear embeddings');
+                                return;
+                            }
+
+                            // Reload AI results (will show empty state)
+                            await loadAIResults();
+                            showStatus('ai', 'success', 'Embeddings cleared');
+                            setTimeout(() => {
+                                document.getElementById('processing-status-ai').classList.remove('active');
+                            }, 1500);
+                        } catch (err) {
+                            console.error('Error clearing embeddings:', err);
+                            showStatus('ai', 'error', 'Error clearing embeddings');
+                        }
+                    }
+
             // Estimate embeddings
             async function estimateEmbeddings() {
-                const threshold = parseFloat(document.getElementById('similarity-threshold').value) || 0.85;
                 const btnEstimate = document.getElementById('btn-estimate');
                 const resultsDiv = document.getElementById('estimate-results');
                 
@@ -946,9 +1032,9 @@ async def root():
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            similarity_threshold: threshold,
                             estimate: true,
-                            estimate_sample: 30
+                            estimate_sample: 30,
+                            inference_mode: 'local'
                         })
                     });
                     
@@ -1352,6 +1438,41 @@ async def clear_embeddings():
     return {"success": True, "message": "Embeddings cleared"}
 
 
+@app.post("/api/clear-scan")
+async def clear_scan():
+    """Clear scan results, duplicates, and cache for current mode."""
+    if SERVER_MODE == "demo":
+        scan_file = PROJECT_ROOT / "scan_results_demo.json"
+        dup_file = PROJECT_ROOT / "scan_duplicates_demo.json"
+        cache_file = PROJECT_ROOT / ".cache_demo" / "scan_cache.json"
+        global DEMO_SCAN_DATA
+    else:
+        scan_file = PROJECT_ROOT / "scan_for_embeddings.json"
+        dup_file = PROJECT_ROOT / "scan_duplicates.json"
+        cache_file = PROJECT_ROOT / ".cache" / "scan_cache.json"
+        global SCAN_DATA
+
+    for path in [scan_file, dup_file]:
+        if path.exists():
+            try:
+                path.unlink()
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to delete {path.name}: {e}")
+
+    if cache_file.exists():
+        try:
+            cache_file.unlink()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to delete cache: {e}")
+
+    if SERVER_MODE == "demo":
+        DEMO_SCAN_DATA = {}
+    else:
+        SCAN_DATA = {}
+
+    return {"success": True, "message": "Scan results cleared"}
+
+
 @app.post("/api/embeddings")
 async def generate_embeddings(request: EmbeddingRequest, background_tasks: BackgroundTasks):
     """Generate embeddings from scan results."""
@@ -1409,11 +1530,20 @@ async def run_scan(request: ScanRequest):
     status["message"] = "Initializing photo scanner..."
     
     try:
+        # Use demo-specific outputs when in demo mode
+        output_scan = "scan_results_demo.json" if SERVER_MODE == "demo" else "scan_for_embeddings.json"
+        output_dups = "scan_duplicates_demo.json" if SERVER_MODE == "demo" else "scan_duplicates.json"
+        cache_file = ".cache_demo/scan_cache.json" if SERVER_MODE == "demo" else ".cache/scan_cache.json"
+
+        # Ensure cache directory exists
+        cache_path = PROJECT_ROOT / cache_file
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
         cmd = [
             "python", "-m", "src.scanner.main",
-            "--output", "scan_for_embeddings.json",
-            "--duplicates-output", "scan_duplicates.json",
-            "--cache-file", ".cache/scan_cache.json",
+            "--output", output_scan,
+            "--duplicates-output", output_dups,
+            "--cache-file", cache_file,
             "--md5-mode", request.md5_mode,
         ]
         
@@ -1511,9 +1641,11 @@ async def run_embeddings(request: EmbeddingRequest):
     status["message"] = f"Generating embeddings ({request.inference_mode} mode)... This may take several minutes."
     
     try:
+        # Use demo scan file when in demo mode, otherwise use main scan_for_embeddings
+        scan_arg = "scan_results_demo.json" if SERVER_MODE == "demo" else "scan_for_embeddings.json"
         cmd = [
             "python", "-m", "src.embedding.main_v2",
-            "scan_for_embeddings.json",
+            scan_arg,
             "--output", "embeddings_demo" if SERVER_MODE == "demo" else "embeddings",
             "--similarity-threshold", str(request.similarity_threshold),
             "--mode", request.inference_mode,
@@ -1533,26 +1665,42 @@ async def run_embeddings(request: EmbeddingRequest):
         
         stdout, stderr = await process.communicate()
         
+        groups_data = []
         if process.returncode == 0:
             output_dir = "embeddings_demo" if SERVER_MODE == "demo" else "embeddings"
             groups_file = PROJECT_ROOT / output_dir / "similar_groups.json"
-            
+
             if groups_file.exists():
-                with open(groups_file) as f:
-                    groups_data = json.load(f)
-                    for group in groups_data:
-                        group["reviewed"] = False
-                    
-                    if SERVER_MODE == "demo":
-                        globals()["DEMO_SIMILAR_GROUPS"] = groups_data
-                    else:
-                        globals()["SIMILAR_GROUPS"] = groups_data
-            
+                try:
+                    with open(groups_file) as f:
+                        groups_data = json.load(f)
+                except Exception as e:
+                    logger.error(f"Failed to load groups file: {e}")
+                    groups_data = []
+
+            # Mark reviewed=False and update globals
+            for group in groups_data:
+                try:
+                    group["reviewed"] = False
+                except Exception:
+                    pass
+
+            if SERVER_MODE == "demo":
+                globals()["DEMO_SIMILAR_GROUPS"] = groups_data
+            else:
+                globals()["SIMILAR_GROUPS"] = groups_data
+
             status["message"] = f"Found {len(groups_data)} similarity groups"
             logger.info(f"Embeddings completed, found {len(groups_data)} groups")
         else:
+            # Log stdout/stderr for debugging
+            try:
+                out = stdout.decode('utf-8', errors='replace') if stdout else ''
+                err = stderr.decode('utf-8', errors='replace') if stderr else ''
+                logger.error(f"Embedding generation failed (return code {process.returncode})\nSTDOUT:\n{out}\nSTDERR:\n{err}")
+            except Exception:
+                logger.error(f"Embedding generation failed with return code {process.returncode}")
             status["message"] = "Embedding generation failed - check terminal logs"
-            logger.error(f"Embedding generation failed with return code {process.returncode}")
     
     except Exception as e:
         status["message"] = f"Embedding error: {str(e)}"

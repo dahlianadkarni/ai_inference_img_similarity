@@ -4,7 +4,7 @@
 
 Your app is now split into two independent services:
 
-1. **Inference Service** (port 8001) — Handles all model inference
+1. **Inference Service** (port 8002) — Handles all model inference
    - Stateless
    - Can run on any machine
    - Only knows about: images in, embeddings out
@@ -25,13 +25,20 @@ Even though both run locally now, this is exactly how production systems like Tr
 python start_services.py
 ```
 
-This:
-- ✓ Starts inference service (port 8001)
+- ✓ Starts inference service (port 8002)
 - ✓ Waits for it to be ready
 - ✓ Starts UI client (port 8000)
 - ✓ Shows you the URLs
 
 Press `Ctrl+C` to stop both.
+
+**Use Demo Dataset (runs demo UI on port 8001):**
+```bash
+python start_services.py --ui-demo
+# Demo UI: http://127.0.0.1:8001 (demo dataset)
+# Inference service: http://127.0.0.1:8002
+# Main UI: http://127.0.0.1:8000
+```
 
 ### Option 2: Start Services Separately (Better for Development)
 
@@ -41,7 +48,7 @@ python -m src.inference_service.server
 ```
 ```
 INFO:     Application startup complete
-INFO:     Uvicorn running on http://127.0.0.1:8001
+INFO:     Uvicorn running on http://127.0.0.1:8002
 ```
 
 **Terminal 2:**
@@ -71,8 +78,8 @@ After starting the inference service, you can use the new embedding generation m
 
 ```bash
 python -m src.embedding.main_v2 scan_for_embeddings.json \
-  --mode remote \
-  --service-url http://127.0.0.1:8001
+   --mode remote \
+   --service-url http://127.0.0.1:8002
 ```
 
 ### Via CLI (auto - tries remote, falls back to local)
@@ -124,9 +131,9 @@ if client.health_check():
 ### 2. Check Service Endpoints
 
 With service running:
-- Health check: http://127.0.0.1:8001/health
-- Model info: http://127.0.0.1:8001/model-info
-- API docs: http://127.0.0.1:8001/docs (interactive Swagger UI)
+- Health check: http://127.0.0.1:8002/health
+- Model info: http://127.0.0.1:8002/model-info
+- API docs: http://127.0.0.1:8002/docs (interactive Swagger UI)
 
 ### 3. Generate Embeddings with Remote Service
 
@@ -170,8 +177,8 @@ By building this now, you're learning the mental model that these frameworks ass
 ### Service won't start
 
 ```bash
-# Check if port 8001 is in use
-lsof -i :8001
+# Check if port 8002 is in use
+lsof -i :8002
 
 # Or try a different port
 python -m src.inference_service.server --port 8002
@@ -181,10 +188,10 @@ python -m src.inference_service.server --port 8002
 
 ```bash
 # Check service is running
-curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:8002/health
 
 # Or specify service URL when starting UI
-python -m src.ui.main --inference-url http://127.0.0.1:8001
+python -m src.ui.main --inference-url http://127.0.0.1:8002
 ```
 
 ### Slow embedding generation

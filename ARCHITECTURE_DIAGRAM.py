@@ -65,7 +65,7 @@ This file shows the components and how they interact.
                                         │
                     ╔═══════════════════╬═══════════════════╗
                     │ HTTP (REST API)   │ (JSON/multipart)  │
-                    ║ http://127.0.0.1:8001                ║
+                    ║ http://127.0.0.1:8002                ║
                     ╚═══════════════════╬═══════════════════╝
                                         ↓
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -131,7 +131,7 @@ This file shows the components and how they interact.
 
 2. UI Backend (app_v3.py):
    ├─ Reads scan_for_embeddings.json
-   ├─ Creates InferenceClient("http://127.0.0.1:8001")
+   ├─ Creates InferenceClient("http://127.0.0.1:8002")
    └─ For each batch of images:
       ├─ Load images from disk
       ├─ Encode to base64
@@ -175,7 +175,7 @@ This file shows the components and how they interact.
 1. User runs: python -m src.embedding.main_v2 scan_for_embeddings.json
 
 2. CLI (main_v2.py):
-   ├─ Try to connect to service at http://127.0.0.1:8001
+   ├─ Try to connect to service at http://127.0.0.1:8002
    │  ├─ If available:
    │  │  └─ Use remote mode (see Example 1)
    │  │

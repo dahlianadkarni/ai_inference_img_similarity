@@ -4,23 +4,7 @@
   "used_applescript": false,
   "max_distance": 5,
   "md5_mode": "on-demand",
-  "image_count": 8091,
-  "exact_groups": [
-    {
-      "size": 2,
-      "files": [
-        "/Users/dnadkarn/demo_photos/2851198725_37b6027625.jpg",
-        "/Users/dnadkarn/demo_photos/3050606344_af711c726c.jpg"
-      ]
-    }
-  ],
-  "perceptual_groups": [
-    {
-      "size": 2,
-      "files": [
-        "/Users/dnadkarn/demo_photos/2851198725_37b6027625.jpg",
-        "/Users/dnadkarn/demo_photos/3050606344_af711c726c.jpg"
-      ]
-    }
-  ]
+  "image_count": 100,
+  "exact_groups": [],
+  "perceptual_groups": []
 }

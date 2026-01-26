@@ -1,7 +1,7 @@
 """Dual startup script for inference service + UI client.
 
 This starts both services:
-1. Inference service (port 8001) - Stateless model inference
+1. Inference service (port 8002) - Stateless model inference
 2. UI client (port 8000) - Photo review interface
 
 They communicate via HTTP, allowing for independent scaling.
@@ -66,7 +66,7 @@ def main():
     parser.add_argument(
         "--inference-port",
         type=int,
-        default=8001,
+        default=8002,
         help="Port for inference service",
     )
     parser.add_argument(
@@ -86,10 +86,21 @@ def main():
         action="store_true",
         help="Skip starting inference service (useful if running separately)",
     )
+    parser.add_argument(
+        "--ui-demo",
+        action="store_true",
+        help="Start UI server in demo mode (use demo dataset on port 8001)",
+    )
     
     args = parser.parse_args()
     setup_logging()
     logger = logging.getLogger(__name__)
+    
+    # Demo mode: Use port 8001 for UI but still start inference service
+    if args.ui_demo:
+        if args.ui_port == 8000:
+            args.ui_port = 8001
+        logger.info("Demo mode: Using demo dataset on port 8001")
     
     inference_url = f"http://{args.inference_host}:{args.inference_port}/health"
     ui_url = f"http://{args.ui_host}:{args.ui_port}"
@@ -109,7 +120,7 @@ def main():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            cwd=Path(__file__).parent.parent.parent,
+            cwd=Path(__file__).parent,
         )
         
         logger.info("Waiting for inference service to become ready...")
@@ -124,17 +135,22 @@ def main():
     # Start UI server
     logger.info(f"\nStarting UI server on {args.ui_host}:{args.ui_port}...")
     
+    # Build UI command and include demo flag if requested
+    ui_cmd = [
+        sys.executable,
+        "-m",
+        "src.ui.main",
+        "--host",
+        args.ui_host,
+        "--port",
+        str(args.ui_port),
+    ]
+    if args.ui_demo:
+        ui_cmd.append("--demo")
+
     ui_process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "src.ui.main",
-            "--host",
-            args.ui_host,
-            "--port",
-            str(args.ui_port),
-        ],
-        cwd=Path(__file__).parent.parent.parent,
+        ui_cmd,
+        cwd=Path(__file__).parent,
     )
     
     logger.info("Waiting for UI server to become ready...")

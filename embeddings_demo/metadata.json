@@ -1,0 +1,602 @@
+[
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2387197355_237f6f41ee.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 0
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2609847254_0ec40c1cce.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 1
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2046222127_a6f300e202.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 2
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2853743795_e90ebc669d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 3
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2696951725_e0ae54f6da.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 4
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3421131122_2e4bde661e.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 5
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3229730008_63f8ca2de2.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 6
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3220009216_10f088185e.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 7
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3415578043_03d33e6efd.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 8
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3437273677_47d4462974.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 9
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3543600125_223747ef4c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 10
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2594459477_8ca0121a9a.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 11
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2579899436_5086a33c7a.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 12
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3387630781_f421a94d9d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 13
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3591094476_b61acd63d6.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 14
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3155501473_510f9c9f6b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 15
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2521062020_f8b983e4b2.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 16
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3564007203_df2b8010f1.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 17
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2869491449_1041485a6b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 18
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2443229844_277cded27d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 19
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/772212710_f5fc22ed35.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 20
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2269021076_cefc9af989.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 21
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/451597318_4f370b1339.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 22
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/96978713_775d66a18d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 23
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2924259848_effb4dcb82.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 24
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1057251835_6ded4ada9c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 25
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1463732130_a754441289.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 26
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1763020597_d4cc8f0f8a.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 27
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3072611047_109bf8b7c3.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 28
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1002674143_1b742ab4b8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 29
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3048380686_732db55281.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 30
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1026685415_0431cbf574.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 31
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2480832276_fa55480ecb.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 32
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2300168895_a9b83e16fc.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 33
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3459871361_92d1ecda36.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 34
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3046286572_d2050ab0d9.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 35
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/408573233_1fff966798.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 36
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3030823649_3b7b6c728d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 37
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3530843182_35af2c821c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 38
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2974587819_742fb7c338.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 39
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3519815055_304dc8e8d6.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 40
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3439382048_d2e23b2b4c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 41
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/262439544_e71cd26b24.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 42
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/295258727_eaf75e0887.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 43
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/506412121_67ecc7ec05.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 44
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1414779054_31946f9dfc.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 45
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2883907436_82bf4a36b8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 46
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1515025681_999199cb79.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 47
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/278002800_3817135105.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 48
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3232030272_b2480a5fe7.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 49
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3592992234_6d3fe58a70.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 50
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2270483627_16fe41b063.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 51
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3419238351_ac18b440c0.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 52
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3376809186_4e26d880b7.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 53
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2380765956_6313d8cae3.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 54
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3025334206_76888792e5.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 55
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3572346664_e1e6c77f11.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 56
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1193116658_c0161c35b5.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 57
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2633082074_32c85f532c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 58
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1072153132_53d2bb1b60.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 59
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3219210794_4324df188b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 60
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/531197115_2be4d5034b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 61
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3568197730_a071d7595b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 62
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2274602044_b3d55df235.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 63
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3687062281_e62f70baf3.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 64
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2843695880_eeea6c67db.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 65
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/521658170_a837af87e9.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 66
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1466479163_439db855af.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 67
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3240048764_acce8af2a5.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 68
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3030294889_78b2ccbe51.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 69
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2901074943_041aba4607.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 70
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3354883962_170d19bfe4.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 71
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/524031846_28b11bc0e5.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 72
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2477121456_1ac5c6d3e4.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 73
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3301854980_233cc2f896.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 74
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3691622437_f13644273c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 75
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2218743570_9d6614c51c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 76
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3062173277_bfb5ef4c45.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 77
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/143680442_2f03f76944.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 78
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3636055584_65a60426f8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 79
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/976392326_082dafc3c5.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 80
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3530687486_6e6be53602.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 81
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3447876218_4ccf42d7a0.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 82
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/918886676_3323fb2a01.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 83
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3335547029_74d620fa6c.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 84
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/268654674_d29e00b3d0.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 85
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/278496691_c1fd93e2d8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 86
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2896640216_761a47f006.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 87
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2339946012_06bd480ab8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 88
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2319175397_3e586cfaf8.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 89
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3591457224_88281dd04f.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 90
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1317292658_ba29330a0b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 91
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2789350645_96a2535b4d.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 92
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/2612608861_92beaa3d0b.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 93
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3653764864_225958c9c1.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 94
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1809758121_96026913bb.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 95
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/3612249030_e2829ffa31.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 96
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/418357172_bdddf71d32.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 97
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/336551609_1385ab139e.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 98
+  },
+  {
+    "file_path": "/Users/dnadkarn/demo_photos/1454678644_7e5a371301.jpg",
+    "model_name": "ViT-B-32",
+    "model_version": "openai",
+    "index": 99
+  }
+]
