@@ -665,8 +665,9 @@ async def root():
                     });
                     
                     // Update tab badge
-                    const totalGroups = (scanDuplicates.exact_groups?.length || 0) + 
-                                       (scanDuplicates.perceptual_groups?.length || 0);
+                    const totalGroups = 
+                        (scanDuplicates && scanDuplicates.exact_groups ? scanDuplicates.exact_groups.length : 0) +
+                        (scanDuplicates && scanDuplicates.perceptual_groups ? scanDuplicates.perceptual_groups.length : 0);
                     document.getElementById('scanner-count').textContent = totalGroups + ' groups';
                     
                     // Enable AI tab
@@ -684,7 +685,11 @@ async def root():
                 let html = '';
                 
                 if (!scanDuplicates || (!scanDuplicates.exact_groups && !scanDuplicates.perceptual_groups)) {
-                    container.innerHTML = '<div class="empty-state"><h3>📊 No duplicates found</h3><p>The scanner didn\'t find any exact or perceptual duplicates in your library.</p></div>';
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>📊 No duplicates found</h3>
+                            <p>The scanner didn't find any exact or perceptual duplicates in your library.</p>
+                        </div>`;
                     return;
                 }
                 
@@ -740,7 +745,7 @@ async def root():
                         html += `
                             <img class="image-thumb" 
                                  src="/api/image?path=${encodedPath}"
-                                 data-path="${filePath.replace(/"/g, '&quot;')}"
+                                 data-path="${encodedPath}"
                                  onclick="openModal(this.dataset.path)"
                                  alt="thumb ${imgIdx}">
                         `;
@@ -757,7 +762,11 @@ async def root():
                     html += `
                             </div>
                             <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #86868b;">
-                                Size: ${formatBytes(group.files.reduce((sum, f) => sum + (scanDataMap[f]?.file_size || 0), 0))}
+                                Size: ${formatBytes(group.files.reduce((sum, f) => {
+                                    const info = scanDataMap[f];
+                                    const size = info && info.file_size ? info.file_size : 0;
+                                    return sum + size;
+                                }, 0))}
                             </div>
                         </div>
                     `;
@@ -782,7 +791,8 @@ async def root():
             function openModal(imagePath) {
                 const modal = document.getElementById('imageModal');
                 const img = document.getElementById('modalImage');
-                img.src = '/api/image?path=' + encodeURIComponent(imagePath);
+                const decoded = decodeURIComponent(imagePath || '');
+                img.src = '/api/image?path=' + encodeURIComponent(decoded);
                 modal.classList.add('active');
             }
             
@@ -1074,7 +1084,7 @@ async def root():
                         html += `
                             <img class="image-thumb" 
                                  src="/api/image?path=${encodedPath}"
-                                 data-path="${filePath.replace(/"/g, '&quot;')}"
+                                 data-path="${encodedPath}"
                                  onclick="openModal(this.dataset.path)"
                                  alt="thumb ${imgIdx}">
                         `;
@@ -1110,8 +1120,8 @@ async def root():
             async function updateStats() {
                 let statsText = '';
                 if (scanDuplicates) {
-                    const exact = scanDuplicates.exact_groups?.length || 0;
-                    const perceptual = scanDuplicates.perceptual_groups?.length || 0;
+                    const exact = scanDuplicates && scanDuplicates.exact_groups ? scanDuplicates.exact_groups.length : 0;
+                    const perceptual = scanDuplicates && scanDuplicates.perceptual_groups ? scanDuplicates.perceptual_groups.length : 0;
                     if (exact > 0 || perceptual > 0) {
                         statsText = `Scanner: ${exact} exact + ${perceptual} perceptual`;
                     }
