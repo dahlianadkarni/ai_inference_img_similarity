@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import logging
 import uvicorn
-from src.ui.app_v3 import app, load_data
+from src.ui.app_v4 import app, load_data
 
 # Setup logging
 logging.basicConfig(

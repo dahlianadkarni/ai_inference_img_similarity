@@ -12,6 +12,23 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
 
+"""Command-line interface for review UI server."""
+
+import argparse
+import logging
+from pathlib import Path
+import sys
+import json
+import os
+
+import numpy as np
+from tqdm import tqdm
+from PIL import Image
+
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from pydantic import BaseModel
+
 from ..grouping import FeedbackLearner
 from ..embedding.storage import EmbeddingStore
 
@@ -25,6 +42,9 @@ app = FastAPI(
 
 # Server mode - which dataset is active
 SERVER_MODE: str = "main"  # "main" or "demo"
+
+# Inference service URL (configurable via environment variable)
+INFERENCE_SERVICE_URL: str = os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8001")
 
 # Global state - Main (Photos Library)
 SIMILAR_GROUPS: List[dict] = []
@@ -69,6 +89,7 @@ class EmbeddingRequest(BaseModel):
     similarity_threshold: float = 0.85
     estimate: bool = False  # If True, only estimate time/resources
     estimate_sample: int = 30  # Number of images to sample for estimation
+    inference_mode: str = "remote"  # "local", "remote", or "auto"
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -553,11 +574,29 @@ async def root():
                 
                 <div class="control-row">
                     <strong>Step 2: Generate Embeddings</strong>
+                    
+                    <label style="font-size: 0.875rem; color: #86868b;">Inference Mode:</label>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="auto">
+                            Auto (try remote, fallback local)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="remote" checked>
+                            Remote (requires service)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="local">
+                            Local (on this Mac)
+                        </label>
+                    </div>
+                    
                     <label style="font-size: 0.875rem; color: #86868b;">Similarity threshold:</label>
                     <input id="similarity-threshold" type="number" class="control-input" placeholder="Threshold" value="0.85" step="0.01" min="0" max="1" style="width: 100px;">
                     <span style="font-size: 0.75rem; color: #86868b;">(Higher = more strict, e.g., 0.99 = nearly identical)</span>
                     <button class="btn" onclick="estimateEmbeddings()" id="btn-estimate" style="background: #5856d6; color: white;">⏱️ Estimate Time</button>
                     <button class="btn btn-keep" onclick="startEmbeddings()" id="btn-embeddings">🧠 Generate Embeddings</button>
+                    <button class="btn" onclick="clearEmbeddings()" id="btn-clear-embeddings" style="background: #a2aaad; color: white;">🗑️ Clear Results</button>
                 </div>
                 
                 <div id="estimate-results" style="display: none; margin-top: 0.5rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border: 1px solid #1976d2;">
@@ -1138,20 +1177,50 @@ async def root():
                 }
             }
 
+            async function clearEmbeddings() {
+                if (!confirm('Clear all embedding results and groups?')) return;
+                
+                try {
+                    const response = await fetch('/api/clear-embeddings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        alert('Error: ' + (error.detail || 'Failed to clear embeddings'));
+                        return;
+                    }
+                    
+                    // Clear the groups container and reload
+                    document.getElementById('groups-container').innerHTML = '<div class="loading">⏳ No embeddings loaded</div>';
+                    alert('Embeddings cleared');
+                } catch (err) {
+                    console.error('Error clearing embeddings:', err);
+                    alert('Error: ' + err.message);
+                }
+            }
+
             async function startEmbeddings() {
                 const threshold = parseFloat(document.getElementById('similarity-threshold').value) || 0.85;
+                const inferenceMode = document.querySelector('input[name="inference-mode"]:checked').value || 'remote';
                 
                 const btnEmbeddings = document.getElementById('btn-embeddings');
                 btnEmbeddings.disabled = true;
                 
                 // Show immediate feedback
-                showStatus('running', 'Initializing embedding generation...');
+                showStatus('running', `Initializing embedding generation (${inferenceMode} mode)...`);
                 
                 try {
                     const response = await fetch('/api/embeddings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ similarity_threshold: threshold, estimate: false })
+                        body: JSON.stringify({ 
+                            similarity_threshold: threshold, 
+                            estimate: false,
+                            inference_mode: inferenceMode,
+                            service_url: null  // Use backend default from environment
+                        })
                     });
                     
                     if (response.ok) {
@@ -2384,6 +2453,46 @@ async def start_scan(request: ScanRequest, background_tasks: BackgroundTasks):
     return {"success": True, "message": "Scan started"}
 
 
+@app.post("/api/clear-embeddings")
+async def clear_embeddings():
+    """Clear all embeddings and groups."""
+    global DEMO_SIMILAR_GROUPS, DEMO_EMBEDDING_STORE, SIMILAR_GROUPS, EMBEDDING_STORE
+    
+    DEMO_SIMILAR_GROUPS = []
+    DEMO_EMBEDDING_STORE = None
+    SIMILAR_GROUPS = []
+    EMBEDDING_STORE = None
+    
+    # Delete embedding files if they exist
+    embeddings_dir = PROJECT_ROOT / ("embeddings_demo" if SERVER_MODE == "demo" else "embeddings")
+    for file in ["similar_groups.json", "similar_pairs.json", "embeddings.npy", "metadata.json"]:
+        file_path = embeddings_dir / file
+        if file_path.exists():
+            file_path.unlink()
+    
+    return {"success": True, "message": "Embeddings cleared"}
+
+
+@app.post("/api/clear-embeddings")
+async def clear_embeddings():
+    """Clear all embeddings and groups."""
+    global DEMO_SIMILAR_GROUPS, DEMO_EMBEDDING_STORE, SIMILAR_GROUPS, EMBEDDING_STORE
+    
+    DEMO_SIMILAR_GROUPS = []
+    DEMO_EMBEDDING_STORE = None
+    SIMILAR_GROUPS = []
+    EMBEDDING_STORE = None
+    
+    # Delete embedding files if they exist
+    embeddings_dir = PROJECT_ROOT / ("embeddings_demo" if SERVER_MODE == "demo" else "embeddings")
+    for file in ["similar_groups.json", "similar_pairs.json", "embeddings.npy", "metadata.json"]:
+        file_path = embeddings_dir / file
+        if file_path.exists():
+            file_path.unlink()
+    
+    return {"success": True, "message": "Embeddings cleared"}
+
+
 @app.post("/api/embeddings")
 async def generate_embeddings(request: EmbeddingRequest, background_tasks: BackgroundTasks):
     """Generate embeddings from scan results."""
@@ -2736,19 +2845,25 @@ async def run_embeddings(request: EmbeddingRequest):
     
     status["running"] = True
     status["stage"] = "Generating Embeddings"
-    status["message"] = "Loading image data and initializing AI model..."
+    status["message"] = f"Generating embeddings ({request.inference_mode} mode)... This may take several minutes."
     
     try:
+        # Use main_v2.py for remote/auto support
         cmd = [
-            "python", "-m", "src.embedding.main",
+            "python", "-m", "src.embedding.main_v2",
             scan_file,
             "--output", output_dir,
-            "--similarity-threshold", str(request.similarity_threshold)
+            "--similarity-threshold", str(request.similarity_threshold),
+            "--mode", request.inference_mode,
         ]
+        
+        # Add service URL if using remote or auto mode
+        if request.inference_mode in ("remote", "auto"):
+            cmd.extend(["--service-url", INFERENCE_SERVICE_URL])
         
         logger.info(f"Running embeddings: {' '.join(cmd)}")
         
-        status["message"] = f"Generating embeddings (threshold: {request.similarity_threshold})... This may take several minutes."
+        status["message"] = f"Generating embeddings ({request.inference_mode} mode, threshold: {request.similarity_threshold})... This may take several minutes."
         
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -2788,7 +2903,7 @@ async def run_embeddings(request: EmbeddingRequest):
                 CURRENT_THRESHOLD = request.similarity_threshold
             
             status["message"] = f"Found {len(groups_data)} similarity groups"
-            logger.info(f"Embeddings completed, found {len(groups_data)} groups")
+            logger.info(f"Embeddings completed ({request.inference_mode} mode), found {len(groups_data)} groups")
         else:
             stderr_text = stderr.decode()
             # Write full stderr to log file

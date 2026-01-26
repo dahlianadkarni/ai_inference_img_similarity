@@ -126,3 +126,11 @@ After giving feedback, click “Re-analyze with Feedback” (or regenerate embed
 
 - Everything runs locally by default.
 - Deletion uses AppleScript to delete photos from the Photos library; start by testing on a small limit.
+
+
+
+Step	Time	Resource	Bottleneck
+1. Scanner	1-5 min	I/O + CPU	File reading, hash computation
+2. Embedding	10-30 sec	GPU/MPS	Neural network (MAIN BOTTLENECK)
+3. Grouping	<1 sec	CPU	Just math on vectors
+4. UI	Instant	Memory	Display

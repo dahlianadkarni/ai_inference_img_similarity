@@ -7,7 +7,7 @@ import sys
 
 import uvicorn
 
-from .app_v3 import app, load_data
+from .app_v4 import app, load_data
 
 
 def setup_logging(verbose: bool = False):
