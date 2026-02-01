@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  inference-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: photo-duplicate-inference:latest
+    container_name: inference-service
+    ports:
+      - "8002:8002"
+    environment:
+      # Model configuration
+      - MODEL_NAME=${MODEL_NAME:-ViT-B-32}
+      - MODEL_PRETRAINED=${MODEL_PRETRAINED:-openai}
+      
+      # Server configuration (override default 127.0.0.1 for container networking)
+      - HOST=0.0.0.0
+      - PORT=8002
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Resource limits (optional, for production)
+      # - OMP_NUM_THREADS=4
+      # - MKL_NUM_THREADS=4
+    
+    # Resource limits (for docker-compose v2+)
+    mem_limit: 4g
+    cpus: 4
+    
+    # Note: For Swarm/K8s, use deploy.resources instead:
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4'
+    #       memory: 4G
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Optional: UI client service (for full stack deployment)
+  # ui-client:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.client
+  #   container_name: ui-client
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - INFERENCE_SERVICE_URL=http://inference-service:8002
+  #   depends_on:
+  #     inference-service:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+# Optional: Networks for isolation
+# networks:
+#   inference-net:
+#     driver: bridge

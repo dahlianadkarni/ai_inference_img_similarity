@@ -1,0 +1,60 @@
+# GPU-enabled Dockerfile for Inference Service
+# For deployment on NVIDIA GPU instances (T4, A10, etc.)
+
+FROM nvidia/cuda:12.1.0-base-ubuntu22.04
+
+# Set working directory
+WORKDIR /app
+
+# Install Python and system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3-pip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
+
+# Copy requirements
+COPY requirements.txt requirements-ml.txt ./
+
+# Install PyTorch with CUDA support first
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Install other dependencies (excluding torch to prevent overwrite)
+RUN pip install --no-cache-dir -r requirements.txt && \
+    grep -v "^torch" requirements-ml.txt | pip install --no-cache-dir -r /dev/stdin || \
+    pip install --no-cache-dir -r requirements-ml.txt
+
+# Copy source code
+COPY src/ ./src/
+
+# Set Python path and environment
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# CUDA environment variables
+ENV CUDA_VISIBLE_DEVICES=0
+ENV TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6+PTX"
+
+# Model configuration
+ENV MODEL_NAME=ViT-B-32
+ENV MODEL_PRETRAINED=openai
+ENV HOST=127.0.0.1
+ENV PORT=8002
+ENV LOG_LEVEL=info
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE ${PORT}
+
+# Run inference service
+CMD ["sh", "-c", "python3 -m src.inference_service.server --host ${HOST} --port ${PORT} --model-name ${MODEL_NAME} --pretrained ${MODEL_PRETRAINED} --log-level ${LOG_LEVEL}"]

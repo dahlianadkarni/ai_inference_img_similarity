@@ -13,6 +13,7 @@ The client handles photo management, storage, and organization.
 import base64
 import io
 import logging
+import os
 from typing import List, Optional
 
 import numpy as np
@@ -124,6 +125,7 @@ def create_app() -> FastAPI:
         logger.info("Inference service ready")
     
     @app.get("/health")
+    @app.get("/healthz")  # Alias for K8s-style health checks
     async def health():
         """Health check endpoint."""
         return {"status": "ok"}
@@ -276,15 +278,57 @@ def create_app() -> FastAPI:
 
 def main():
     """Main entry point."""
+    import argparse
     import uvicorn
     
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Inference service for image embeddings")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=os.getenv("HOST", "127.0.0.1"),
+        help="Host to bind to (default: 127.0.0.1 or HOST env var)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("PORT", "8002")),
+        help="Port to bind to (default: 8002 or PORT env var)",
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=os.getenv("MODEL_NAME", "ViT-B-32"),
+        help="Model name to use (default: ViT-B-32 or MODEL_NAME env var)",
+    )
+    parser.add_argument(
+        "--pretrained",
+        type=str,
+        default=os.getenv("MODEL_PRETRAINED", "openai"),
+        help="Pretrained weights (default: openai or MODEL_PRETRAINED env var)",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=os.getenv("LOG_LEVEL", "info"),
+        choices=["debug", "info", "warning", "error"],
+        help="Logging level (default: info or LOG_LEVEL env var)",
+    )
+    
+    args = parser.parse_args()
+    
+    # Configure logging
+    log_level = getattr(logging, args.log_level.upper())
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     
+    logger.info(f"Starting inference service on {args.host}:{args.port}")
+    logger.info(f"Default model: {args.model_name} ({args.pretrained})")
+    
     app = create_app()
-    uvicorn.run(app, host="127.0.0.1", port=8002)
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

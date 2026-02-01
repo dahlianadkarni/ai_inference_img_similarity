@@ -2,7 +2,11 @@
 
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
-If you’re looking for the older “project history / phase notes”, it lives in docs/IMPLEMENTATION_NOTES.md.
+**📚 Documentation:**
+- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Step 1 & 2 complete ✅)
+- **[DOCKER_README.md](DOCKER_README.md)** — Docker containerization guide with security best practices
+- **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8001)
+- **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
 
 ## What It Does
 
@@ -122,10 +126,48 @@ After giving feedback, click “Re-analyze with Feedback” (or regenerate embed
 - embeddings/similar_groups.json — groups to review
 - embeddings/feedback.pkl — persisted feedback examples
 
+## Architecture
+
+The app uses a **client-service architecture** — the same pattern used by production inference systems like Triton, TorchServe, and vLLM.
+
+```
+┌──────────────────────┐         ┌──────────────────────┐
+│   Client/UI          │         │ Inference Service    │
+│  (Port 8000)         │─HTTP──→ │  (Port 8002)         │
+│                      │         │                      │
+│ • Scan photos       │         │ • Load model         │
+│ • Call service      │         │ • Generate embeddings│
+│ • Store embeddings  │         │ • Return JSON        │
+│ • Group results     │         │ • Stateless API      │
+│ • Display UI        │         │                      │
+└──────────────────────┘         └──────────────────────┘
+```
+
+**Key Principles:**
+- **Separation of Concerns**: Client handles photos/metadata, service handles ML inference
+- **Stateless Service**: Each request is independent, enabling horizontal scaling
+- **Clean HTTP Boundary**: Services communicate via JSON/REST APIs
+- **Independent Deployment**: Can run on same machine or separate GPU server
+
+**Three Embedding Modes:**
+```bash
+# Local mode (original behavior - model loads inline)
+python -m src.embedding.main_v2 scan_for_embeddings.json --mode local
+
+# Remote mode (calls inference service)
+python -m src.embedding.main_v2 scan_for_embeddings.json --mode remote
+
+# Auto mode (tries remote, falls back to local)
+python -m src.embedding.main_v2 scan_for_embeddings.json
+```
+
+See [DOCKER_README.md](DOCKER_README.md) for containerization details.
+
 ## Repo Map
 
 - src/scanner/ — scanning + AppleScript Photos export
 - src/embedding/ — OpenCLIP embedding generation + storage
+- src/inference_service/ — stateless FastAPI inference server
 - src/grouping/ — clustering + feedback learner
 - src/ui/ — FastAPI UI server
 

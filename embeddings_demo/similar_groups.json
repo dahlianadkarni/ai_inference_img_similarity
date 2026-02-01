@@ -2,7 +2,7 @@
   {
     "group_id": 0,
     "size": 2,
-    "avg_similarity": 0.8587335348129272,
+    "avg_similarity": 0.8507682085037231,
     "files": [
       {
         "path": "/Users/dnadkarn/demo_photos/1026685415_0431cbf574.jpg",
@@ -10,19 +10,19 @@
         "index": 31
       },
       {
-        "path": "/Users/dnadkarn/demo_photos/2477121456_1ac5c6d3e4.jpg",
-        "name": "2477121456_1ac5c6d3e4.jpg",
-        "index": 73
+        "path": "/Users/dnadkarn/demo_photos/1072153132_53d2bb1b60.jpg",
+        "name": "1072153132_53d2bb1b60.jpg",
+        "index": 59
       }
     ],
     "similarities": {
-      "31-73": 0.8587335348129272
+      "31-59": 0.8507682085037231
     }
   },
   {
     "group_id": 1,
     "size": 2,
-    "avg_similarity": 0.8890131711959839,
+    "avg_similarity": 0.8906230926513672,
     "files": [
       {
         "path": "/Users/dnadkarn/demo_photos/408573233_1fff966798.jpg",
@@ -36,7 +36,27 @@
       }
     ],
     "similarities": {
-      "36-67": 0.8890131711959839
+      "36-67": 0.8906230926513672
+    }
+  },
+  {
+    "group_id": 2,
+    "size": 2,
+    "avg_similarity": 0.8511488437652588,
+    "files": [
+      {
+        "path": "/Users/dnadkarn/demo_photos/262439544_e71cd26b24.jpg",
+        "name": "262439544_e71cd26b24.jpg",
+        "index": 42
+      },
+      {
+        "path": "/Users/dnadkarn/demo_photos/2633082074_32c85f532c.jpg",
+        "name": "2633082074_32c85f532c.jpg",
+        "index": 58
+      }
+    ],
+    "similarities": {
+      "42-58": 0.8511488437652588
     }
   }
 ]

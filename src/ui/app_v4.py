@@ -473,6 +473,32 @@ async def root():
                 font-size: 40px;
                 cursor: pointer;
             }
+            .modal-nav {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                background: rgba(255,255,255,0.2);
+                color: white;
+                border: none;
+                padding: 20px;
+                font-size: 30px;
+                cursor: pointer;
+                border-radius: 5px;
+                transition: background 0.2s;
+            }
+            .modal-nav:hover:not(:disabled) {
+                background: rgba(255,255,255,0.4);
+            }
+            .modal-nav:disabled {
+                opacity: 0.3;
+                cursor: not-allowed;
+            }
+            .modal-nav.prev {
+                left: 20px;
+            }
+            .modal-nav.next {
+                right: 20px;
+            }
             
             .empty-state {
                 text-align: center;
@@ -638,7 +664,9 @@ async def root():
         <!-- Image Modal -->
         <div id="imageModal" class="modal" onclick="closeModal()">
             <span class="modal-close" onclick="closeModal()">&times;</span>
+            <button id="modalPrev" class="modal-nav prev" onclick="event.stopPropagation(); modalPrevImage();">❮</button>
             <img class="modal-content" id="modalImage" onclick="event.stopPropagation()">
+            <button id="modalNext" class="modal-nav next" onclick="event.stopPropagation(); modalNextImage();">❯</button>
         </div>
 
         <script>
@@ -646,6 +674,8 @@ async def root():
             let groups = [];
             let scanDataMap = {};
             let currentTab = 'scanner';
+            let modalCurrentGroup = null;
+            let modalCurrentIndex = -1;
             
             // Tab switching
             function switchTab(tab) {
@@ -854,12 +884,82 @@ async def root():
                 const decoded = decodeURIComponent(imagePath || '');
                 img.src = '/api/image?path=' + encodeURIComponent(decoded);
                 modal.classList.add('active');
+                
+                // Find the current group and index for navigation
+                modalCurrentGroup = null;
+                modalCurrentIndex = -1;
+                
+                for (const group of groups) {
+                    const index = group.files.findIndex(f => f.path === decoded);
+                    if (index !== -1) {
+                        modalCurrentGroup = group;
+                        modalCurrentIndex = index;
+                        break;
+                    }
+                }
+                
+                updateModalNavButtons();
+            }
+            
+            function updateModalNavButtons() {
+                const prevBtn = document.getElementById('modalPrev');
+                const nextBtn = document.getElementById('modalNext');
+                
+                if (!modalCurrentGroup || modalCurrentGroup.files.length <= 1) {
+                    if (prevBtn) prevBtn.style.display = 'none';
+                    if (nextBtn) nextBtn.style.display = 'none';
+                } else {
+                    if (prevBtn) {
+                        prevBtn.style.display = 'block';
+                        prevBtn.disabled = modalCurrentIndex === 0;
+                    }
+                    if (nextBtn) {
+                        nextBtn.style.display = 'block';
+                        nextBtn.disabled = modalCurrentIndex === modalCurrentGroup.files.length - 1;
+                    }
+                }
+            }
+            
+            function modalPrevImage() {
+                if (modalCurrentGroup && modalCurrentIndex > 0) {
+                    modalCurrentIndex--;
+                    const file = modalCurrentGroup.files[modalCurrentIndex];
+                    const img = document.getElementById('modalImage');
+                    img.src = '/api/image?path=' + encodeURIComponent(file.path);
+                    updateModalNavButtons();
+                }
+            }
+            
+            function modalNextImage() {
+                if (modalCurrentGroup && modalCurrentIndex < modalCurrentGroup.files.length - 1) {
+                    modalCurrentIndex++;
+                    const file = modalCurrentGroup.files[modalCurrentIndex];
+                    const img = document.getElementById('modalImage');
+                    img.src = '/api/image?path=' + encodeURIComponent(file.path);
+                    updateModalNavButtons();
+                }
             }
             
             function closeModal() {
                 const modal = document.getElementById('imageModal');
                 modal.classList.remove('active');
+                modalCurrentGroup = null;
+                modalCurrentIndex = -1;
             }
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                const modal = document.getElementById('imageModal');
+                if (modal.classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        modalPrevImage();
+                    } else if (e.key === 'ArrowRight') {
+                        modalNextImage();
+                    } else if (e.key === 'Escape') {
+                        closeModal();
+                    }
+                }
+            });
             
             // Format bytes
             function formatBytes(bytes) {
