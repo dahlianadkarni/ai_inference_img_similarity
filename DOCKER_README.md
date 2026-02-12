@@ -92,6 +92,8 @@ docker run -d \
 
 ## GPU Deployment
 
+### Local GPU (NVIDIA on Linux/Windows)
+
 ```bash
 # Build GPU image
 docker build -f Dockerfile.gpu -t photo-duplicate-inference:gpu .
@@ -100,9 +102,31 @@ docker build -f Dockerfile.gpu -t photo-duplicate-inference:gpu .
 docker run -d \
   -p 8002:8002 \
   --gpus all \
+  -e HOST=0.0.0.0 \
   --name inference-service \
   photo-duplicate-inference:gpu
 ```
+
+### Cloud GPU Deployment (Vast.ai, RunPod, Lambda Labs)
+
+**Important:** Must build for `linux/amd64` architecture on macOS:
+
+```bash
+# Build for cloud GPU instances (linux/amd64)
+docker buildx build --platform linux/amd64 \
+  -f Dockerfile.gpu \
+  -t yourdockeruser/photo-duplicate-inference:gpu-linux-amd64 \
+  .
+
+# Push to Docker Hub
+docker push yourdockeruser/photo-duplicate-inference:gpu-linux-amd64
+```
+
+**See [GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md) for complete cloud deployment guide** including:
+- Vast.ai setup walkthrough
+- Environment variable configuration
+- Port mapping and troubleshooting
+- Cost management tips
 
 ## Troubleshooting
 

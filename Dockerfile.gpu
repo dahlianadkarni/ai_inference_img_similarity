@@ -1,7 +1,7 @@
 # GPU-enabled Dockerfile for Inference Service
-# For deployment on NVIDIA GPU instances (T4, A10, etc.)
+# For deployment on NVIDIA GPU instances (T4, A10, RTX 6000 Ada, etc.)
 
-FROM nvidia/cuda:12.1.0-base-ubuntu22.04
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
 # Set working directory
 WORKDIR /app
@@ -20,13 +20,13 @@ RUN useradd -m -u 1000 appuser && \
 # Copy requirements
 COPY requirements.txt requirements-ml.txt ./
 
-# Install PyTorch with CUDA support first
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch with CUDA 12.4 support (includes Ada architecture support)
+RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
 # Install other dependencies (excluding torch to prevent overwrite)
-RUN pip install --no-cache-dir -r requirements.txt && \
-    grep -v "^torch" requirements-ml.txt | pip install --no-cache-dir -r /dev/stdin || \
-    pip install --no-cache-dir -r requirements-ml.txt
+RUN pip3 install --no-cache-dir -r requirements.txt && \
+    grep -v "^torch" requirements-ml.txt | pip3 install --no-cache-dir -r /dev/stdin || \
+    pip3 install --no-cache-dir -r requirements-ml.txt
 
 # Copy source code
 COPY src/ ./src/
@@ -37,12 +37,11 @@ ENV PYTHONUNBUFFERED=1
 
 # CUDA environment variables
 ENV CUDA_VISIBLE_DEVICES=0
-ENV TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6+PTX"
 
 # Model configuration
 ENV MODEL_NAME=ViT-B-32
 ENV MODEL_PRETRAINED=openai
-ENV HOST=127.0.0.1
+ENV HOST=0.0.0.0
 ENV PORT=8002
 ENV LOG_LEVEL=info
 

@@ -3,8 +3,9 @@
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
 **📚 Documentation:**
-- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Step 1 & 2 complete ✅)
+- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Step 1, 2 & 3 complete ✅)
 - **[DOCKER_README.md](DOCKER_README.md)** — Docker containerization guide with security best practices
+- **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8001)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
 

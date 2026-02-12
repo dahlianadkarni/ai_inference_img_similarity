@@ -2,19 +2,19 @@
   {
     "file1": "/Users/dnadkarn/demo_photos/1026685415_0431cbf574.jpg",
     "file2": "/Users/dnadkarn/demo_photos/1072153132_53d2bb1b60.jpg",
-    "similarity": 0.8507682085037231,
+    "similarity": 0.850767970085144,
     "group_id": 0
   },
   {
     "file1": "/Users/dnadkarn/demo_photos/408573233_1fff966798.jpg",
     "file2": "/Users/dnadkarn/demo_photos/1466479163_439db855af.jpg",
-    "similarity": 0.8906230926513672,
+    "similarity": 0.890623152256012,
     "group_id": 1
   },
   {
     "file1": "/Users/dnadkarn/demo_photos/262439544_e71cd26b24.jpg",
     "file2": "/Users/dnadkarn/demo_photos/2633082074_32c85f532c.jpg",
-    "similarity": 0.8511488437652588,
+    "similarity": 0.8511489629745483,
     "group_id": 2
   }
 ]

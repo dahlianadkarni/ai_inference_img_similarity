@@ -2,7 +2,7 @@
   {
     "group_id": 0,
     "size": 2,
-    "avg_similarity": 0.8507682085037231,
+    "avg_similarity": 0.850767970085144,
     "files": [
       {
         "path": "/Users/dnadkarn/demo_photos/1026685415_0431cbf574.jpg",
@@ -16,13 +16,13 @@
       }
     ],
     "similarities": {
-      "31-59": 0.8507682085037231
+      "31-59": 0.850767970085144
     }
   },
   {
     "group_id": 1,
     "size": 2,
-    "avg_similarity": 0.8906230926513672,
+    "avg_similarity": 0.890623152256012,
     "files": [
       {
         "path": "/Users/dnadkarn/demo_photos/408573233_1fff966798.jpg",
@@ -36,13 +36,13 @@
       }
     ],
     "similarities": {
-      "36-67": 0.8906230926513672
+      "36-67": 0.890623152256012
     }
   },
   {
     "group_id": 2,
     "size": 2,
-    "avg_similarity": 0.8511488437652588,
+    "avg_similarity": 0.8511489629745483,
     "files": [
       {
         "path": "/Users/dnadkarn/demo_photos/262439544_e71cd26b24.jpg",
@@ -56,7 +56,7 @@
       }
     ],
     "similarities": {
-      "42-58": 0.8511488437652588
+      "42-58": 0.8511489629745483
     }
   }
 ]
