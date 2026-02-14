@@ -1,0 +1,80 @@
+scan_duplicates.json
+scan_for_embeddings.json
+scan_results.json
+#embeddings_demo/
+#embeddings_demo/embeddings.npy
+#embeddings_demo/similar_groups.json
+#embeddings_demo/similar_pairs.json
+
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data
+data/
+*.db
+*.sqlite
+embeddings/
+models/
+
+# Model binaries and generated files (do not commit)
+model_repository/**/1/model.onnx
+model_repository/**/2/model.onnx
+model_repository/**/3/model.onnx
+model_repository/**/*.onnx
+model_repository/**/*.bin
+model_repository/**/*.ckpt
+model_repository/**/*.pt
+model_repository/**/*.h5
+model_repository/**/*.pb
+model_repository/**/*.pkl
+model_repository/**/*.joblib
+model_repository/**/*.sav
+model_repository/**/*.tflite
+model_repository/**/*.npy
+model_repository/**/*.npz
+model_repository/**/*.tmp
+model_repository/**/*.bak
+model_repository/**/*.log
+model_repository/**/__pycache__/
+model_repository/**/.DS_Store
+
+# Secrets
+.env
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+*.tar
+.dockerignore
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/

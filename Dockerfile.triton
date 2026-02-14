@@ -1,0 +1,26 @@
+# Triton Inference Server Dockerfile for OpenCLIP embeddings
+# For deployment on NVIDIA GPU instances
+
+FROM nvcr.io/nvidia/tritonserver:24.01-py3
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy model repository
+COPY model_repository/ /models/
+
+# Expose Triton ports
+EXPOSE 8000 8001 8002
+
+# Health check - wait for models to load
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8000/v2/health/ready || exit 1
+
+# Start Triton server
+# --model-repository: Path to model repository
+# --strict-model-config: Whether to require config.pbtxt (false = auto-generate)
+# --log-verbose: Verbose logging level
+CMD ["tritonserver", \
+     "--model-repository=/models", \
+     "--strict-model-config=false", \
+     "--log-verbose=1"]

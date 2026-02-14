@@ -1,0 +1,36 @@
+name: "openclip_vit_b32"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "embedding"
+    data_type: TYPE_FP32
+    dims: [ 512 ]
+  }
+]
+
+# Dynamic batching configuration
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 5000
+}
+
+# Instance configuration - CPU for local testing
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]
+
+# Version policy
+version_policy: { specific { versions: 1 }}

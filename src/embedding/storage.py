@@ -53,8 +53,8 @@ class EmbeddingStore:
         new_metadata = [
             {
                 "file_path": path,
-                "model_name": model_info["model_name"],
-                "model_version": model_info["pretrained"],
+                "model_name": model_info.get("model_name", "unknown"),
+                "model_version": model_info.get("pretrained", "unknown"),
                 "index": i + len(self.metadata),
             }
             for i, path in enumerate(file_paths)

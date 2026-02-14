@@ -2,11 +2,16 @@
 
 This module handles communication with the inference service,
 including image encoding and response handling.
+
+Supports multiple backends:
+- pytorch: FastAPI + PyTorch (default)
+- triton: NVIDIA Triton Inference Server
 """
 
 import base64
 import io
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -18,23 +23,33 @@ logger = logging.getLogger(__name__)
 
 
 class InferenceClient:
-    """Client for calling the inference service."""
+    """Client for calling the inference service.
+    
+    Supports multiple backends via environment variables:
+    - INFERENCE_BACKEND: "pytorch" (default) or "triton"
+    - INFERENCE_SERVICE_URL: Service URL (default: http://127.0.0.1:8002)
+    """
     
     def __init__(
         self,
-        service_url: str = "http://127.0.0.1:8002",
+        service_url: str = None,
+        backend: str = None,
         timeout: float = 300.0,
     ):
         """
         Initialize client.
         
         Args:
-            service_url: Base URL of inference service
+            service_url: Base URL of inference service (or use INFERENCE_SERVICE_URL env)
+            backend: Backend type - "pytorch" or "triton" (or use INFERENCE_BACKEND env)
             timeout: Request timeout in seconds
         """
-        self.service_url = service_url.rstrip("/")
+        self.service_url = (service_url or os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8002")).rstrip("/")
+        self.backend = (backend or os.getenv("INFERENCE_BACKEND", "pytorch")).lower()
         self.timeout = timeout
         self.client = httpx.Client(timeout=timeout)
+        
+        logger.info(f"InferenceClient initialized: backend={self.backend}, url={self.service_url}")
     
     def __del__(self):
         """Clean up HTTP client."""
@@ -49,7 +64,10 @@ class InferenceClient:
             True if service is accessible and healthy
         """
         try:
-            response = self.client.get(f"{self.service_url}/health")
+            if self.backend == "triton":
+                response = self.client.get(f"{self.service_url}/v2/health/ready")
+            else:  # pytorch
+                response = self.client.get(f"{self.service_url}/health")
             return response.status_code == 200
         except Exception as e:
             logger.error(f"Health check failed: {e}")
@@ -63,9 +81,22 @@ class InferenceClient:
             Model information dict
         """
         try:
-            response = self.client.get(f"{self.service_url}/model-info")
-            response.raise_for_status()
-            return response.json()
+            if self.backend == "triton":
+                response = self.client.get(f"{self.service_url}/v2/models/openclip_vit_b32")
+                response.raise_for_status()
+                data = response.json()
+                # Reformat to match PyTorch response
+                return {
+                    "model_name": data.get("name"),
+                    "platform": data.get("platform"),
+                    "backend": "triton",
+                    "max_batch_size": data.get("max_batch_size"),
+                    "pretrained": "openai",  # Default for Triton ONNX model
+                }
+            else:  # pytorch
+                response = self.client.get(f"{self.service_url}/model-info")
+                response.raise_for_status()
+                return response.json()
         except Exception as e:
             logger.error(f"Failed to get model info: {e}")
             raise
@@ -90,6 +121,18 @@ class InferenceClient:
         Returns:
             Array of embeddings, shape (n_images, embedding_dim)
         """
+        if self.backend == "triton":
+            return self._embed_triton(images)
+        else:  # pytorch
+            return self._embed_pytorch_base64(images, model_name, pretrained)
+    
+    def _embed_pytorch_base64(
+        self,
+        images: List[Image.Image],
+        model_name: str,
+        pretrained: str,
+    ) -> np.ndarray:
+        """Embed images using PyTorch backend."""
         # Encode images to base64
         b64_images = []
         for img in images:
@@ -123,6 +166,68 @@ class InferenceClient:
             logger.error(f"Failed to embed images: {e}")
             raise
     
+    def _embed_triton(self, images: List[Image.Image]) -> np.ndarray:
+        """Embed images using Triton backend."""
+        # Preprocess images to model input format
+        # Triton expects: [batch, channels, height, width] float32 in range [0, 1]
+        batch = []
+        for img in images:
+            # Resize to 224x224
+            img_resized = img.resize((224, 224), Image.BILINEAR)
+            
+            # Convert to numpy array
+            img_array = np.array(img_resized).astype(np.float32)
+            
+            # Normalize to [0, 1]
+            img_array = img_array / 255.0
+            
+            # Convert HWC to CHW
+            img_array = np.transpose(img_array, (2, 0, 1))
+            
+            batch.append(img_array)
+        
+        # Stack into batch
+        batch_array = np.array(batch, dtype=np.float32)
+        
+        # Prepare Triton inference request
+        payload = {
+            "inputs": [
+                {
+                    "name": "image",
+                    "shape": list(batch_array.shape),
+                    "datatype": "FP32",
+                    "data": batch_array.flatten().tolist()
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "embedding"
+                }
+            ]
+        }
+        
+        # Send request
+        try:
+            response = self.client.post(
+                f"{self.service_url}/v2/models/openclip_vit_b32/infer",
+                json=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            # Extract embeddings
+            embeddings = np.array(result['outputs'][0]['data'], dtype=np.float32)
+            
+            # Reshape to (batch_size, embedding_dim)
+            embeddings = embeddings.reshape(len(images), -1)
+            
+            return embeddings
+        
+        except Exception as e:
+            logger.error(f"Failed to embed images with Triton: {e}")
+            raise
+    
     def embed_images_files(
         self,
         image_paths: List[Path],
@@ -135,6 +240,8 @@ class InferenceClient:
         This method is more efficient for large images or batches
         since it avoids base64 encoding overhead.
         
+        Note: Only supported by PyTorch backend currently.
+        
         Args:
             image_paths: List of Path objects to image files
             model_name: CLIP model to use
@@ -143,6 +250,11 @@ class InferenceClient:
         Returns:
             Array of embeddings, shape (n_images, embedding_dim)
         """
+        if self.backend == "triton":
+            # For Triton, load images and use base64 method
+            images = [Image.open(path) for path in image_paths]
+            return self.embed_images_base64(images, model_name, pretrained)
+        
         # Prepare files for upload
         files = []
         for path in image_paths:
