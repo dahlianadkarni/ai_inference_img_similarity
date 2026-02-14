@@ -1,10 +1,8 @@
+
 scan_duplicates.json
 scan_for_embeddings.json
 scan_results.json
-#embeddings_demo/
-#embeddings_demo/embeddings.npy
-#embeddings_demo/similar_groups.json
-#embeddings_demo/similar_pairs.json
+embeddings_demo/
 
 
 # Python
