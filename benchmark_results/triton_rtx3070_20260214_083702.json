@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-02-14T08:37:03.208904",
+  "config": {
+    "backend": "triton",
+    "pytorch_url": "http://localhost:8002",
+    "triton_url": "http://142.112.39.215:5257",
+    "triton_metrics_url": "http://142.112.39.215:5354/metrics",
+    "iterations": 50,
+    "concurrency": 16,
+    "concurrent_requests": 200,
+    "batch_sizes": "1,4,8,16,32",
+    "output": "benchmark_results/triton_rtx3070_20260214_083702.json"
+  },
+  "triton": {
+    "cold_start": {
+      "first_request_ms": 674.13
+    },
+    "single": {
+      "mean_ms": 724.13160658,
+      "p50_ms": 564.1931875000017,
+      "p95_ms": 1874.7398187499984,
+      "p99_ms": 2031.8926488399995,
+      "min_ms": 511.8077910000025,
+      "max_ms": 2153.0544999999997,
+      "count": 50
+    },
+    "batch_4": {
+      "mean_ms": 1704.48261326,
+      "p50_ms": 1385.1990000000037,
+      "p95_ms": 4198.075433299998,
+      "p99_ms": 6239.159063580006,
+      "min_ms": 1043.2291659999892,
+      "max_ms": 6403.760333000008,
+      "count": 50
+    },
+    "batch_8": {
+      "mean_ms": 2609.8203724199993,
+      "p50_ms": 2019.442666499998,
+      "p95_ms": 6212.145741699985,
+      "p99_ms": 8284.335391490005,
+      "min_ms": 1656.5162920000205,
+      "max_ms": 8410.778665999998,
+      "count": 50
+    },
+    "batch_16": {
+      "mean_ms": 5301.086295840001,
+      "p50_ms": 3460.7667085000176,
+      "p95_ms": 11544.695735199983,
+      "p99_ms": 17574.044413080002,
+      "min_ms": 3003.6127079999915,
+      "max_ms": 18439.50775000002,
+      "count": 50
+    },
+    "batch_32": {
+      "mean_ms": 9649.246010859995,
+      "p50_ms": 6480.052686999954,
+      "p95_ms": 21473.995674999955,
+      "p99_ms": 28188.734110579964,
+      "min_ms": 5693.078291999996,
+      "max_ms": 28416.937624999948,
+      "count": 50
+    },
+    "concurrent": {
+      "mean_ms": 1665.4693926899922,
+      "p50_ms": 1141.7109165000738,
+      "p95_ms": 4494.740183649998,
+      "p99_ms": 6373.110797170008,
+      "min_ms": 503.5557090000111,
+      "max_ms": 7382.924125000045,
+      "count": 200,
+      "wall_time_s": 22.956,
+      "throughput_rps": 8.71,
+      "concurrency": 16,
+      "total_requests": 200,
+      "successful": 200
+    },
+    "server_metrics": {
+      "inference_request_success": 459.0,
+      "queue_duration_us": 1835633.0,
+      "compute_input_duration_us": 1566833.0,
+      "compute_infer_duration_us": 13690887.0,
+      "compute_output_duration_us": 41357.0
+    }
+  }
+}

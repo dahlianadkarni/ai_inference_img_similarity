@@ -3,7 +3,8 @@
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
 **📚 Documentation:**
-- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Step 1, 2 & 3 complete ✅)
+- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Steps 1, 2, 3 & 4 complete ✅)
+- **[TRITON_SETUP.md](TRITON_SETUP.md)** — Step 4: Triton Inference Server setup, benchmarking, and trade-offs
 - **[DOCKER_README.md](DOCKER_README.md)** — Docker containerization guide with security best practices
 - **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8001)
@@ -143,6 +144,22 @@ The app uses a **client-service architecture** — the same pattern used by prod
 │ • Display UI        │         │                      │
 └──────────────────────┘         └──────────────────────┘
 ```
+
+**Inference Backends (switchable via env vars):**
+
+| Backend | Docker Image | Ports | Status |
+|---------|-------------|-------|--------|
+| PyTorch + FastAPI | `Dockerfile.gpu` | 8002 | ✅ Step 3 |
+| NVIDIA Triton (ONNX) | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4 |
+
+```bash
+# Switch backends with environment variables:
+export INFERENCE_BACKEND=pytorch   # or "triton"
+export INFERENCE_SERVICE_URL=http://localhost:8002  # or :8003 for Triton
+python -m src.ui.main
+```
+
+See [TRITON_SETUP.md](TRITON_SETUP.md) for Triton setup, benchmarking, and trade-offs evaluation.
 
 **Key Principles:**
 - **Separation of Concerns**: Client handles photos/metadata, service handles ML inference

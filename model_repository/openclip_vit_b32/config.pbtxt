@@ -1,3 +1,34 @@
+# =============================================================================
+# OpenCLIP ViT-B-32 — Triton Model Configuration
+# =============================================================================
+#
+# This config is used by NVIDIA Triton Inference Server to load and serve
+# the ONNX-exported OpenCLIP ViT-B-32 model.
+#
+# CONFIGURATION PROFILES:
+#   - LOCAL (CPU):  kind: KIND_CPU, no CUDA graphs (current, for Mac testing)
+#   - CLOUD (GPU):  kind: KIND_GPU, CUDA graphs enabled (deploy_triton_gpu.sh swaps this)
+#
+# DYNAMIC BATCHING RATIONALE:
+#   preferred_batch_size: [4, 8, 16, 32]
+#     - 4:  Low-latency for interactive single-user requests
+#     - 8:  Good balance for small concurrent bursts
+#     - 16: Efficient GPU utilization for moderate load
+#     - 32: Maximum throughput under high concurrency (matches max_batch_size)
+#
+#   max_queue_delay_microseconds: 5000 (5ms)
+#     - Triton waits up to 5ms to accumulate a larger batch before executing.
+#     - Trade-off: higher delay = larger batches = better throughput,
+#       but adds latency to individual requests.
+#     - 5ms is a good default; tune up to 50ms for batch-heavy workloads,
+#       or down to 1ms for latency-sensitive interactive use.
+#
+# max_batch_size: 32
+#   - ViT-B-32 with FP32 at batch=32 uses ~2.5GB VRAM.
+#   - Safe for 8GB+ GPUs. Increase to 64 on 24GB+ GPUs for more throughput.
+#
+# =============================================================================
+
 name: "openclip_vit_b32"
 platform: "onnxruntime_onnx"
 max_batch_size: 32
@@ -18,13 +49,17 @@ output [
   }
 ]
 
-# Dynamic batching configuration
+# Dynamic batching — Triton automatically groups concurrent requests
+# into batches for better GPU utilization.
 dynamic_batching {
   preferred_batch_size: [ 4, 8, 16, 32 ]
   max_queue_delay_microseconds: 5000
 }
 
-# Instance configuration - CPU for local testing
+# Instance configuration — CPU for local testing on Mac.
+# For GPU deployment, deploy_triton_gpu.sh replaces this with:
+#   instance_group [ { count: 1, kind: KIND_GPU, gpus: [0] } ]
+#   optimization { cuda { graphs: true } }
 instance_group [
   {
     count: 1
@@ -32,5 +67,5 @@ instance_group [
   }
 ]
 
-# Version policy
+# Version policy — only load version 1 explicitly
 version_policy: { specific { versions: 1 }}
