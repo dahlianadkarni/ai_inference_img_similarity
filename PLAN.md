@@ -1,3 +1,4 @@
+
 Step 1 (Most important): Split your app into "client" and "inference service" - ✅ DONE
 
 Step 2: Containerize the inference service - ✅ DONE
@@ -27,13 +28,17 @@ Step 4: Introduce one inference framework. Eg: NVIDIA Triton Inference Server - 
 - See TRITON_SETUP.md for details
 
 
-Step 5A: ONNX Runtime/Triton Optimization (No TensorRT)
-    - Enable and test CUDA graphs in Triton config for GPU inference
-    - Profile ONNX Runtime for slow ops or CPU fallbacks (use ONNX Runtime profiling tools)
-    - Experiment with `max_queue_delay_microseconds` and client concurrency to maximize dynamic batching (document impact on throughput/latency)
-    - Document any serialization/deserialization overheads found in ONNX Runtime
-    - Observe and record GPU memory usage for ONNX Runtime and PyTorch backends
-    - Summarize findings and update documentation with recommendations
+Step 5A: ONNX Runtime/Triton Optimization (No TensorRT) - ✅ COMPLETE
+    - Enable and test CUDA graphs in Triton config for GPU inference ✅
+    - Profile ONNX Runtime for slow ops or CPU fallbacks (use ONNX Runtime profiling tools) ✅
+    - Experiment with `max_queue_delay_microseconds` and client concurrency to maximize dynamic batching (document impact on throughput/latency) ✅
+    - Document any serialization/deserialization overheads found in ONNX Runtime ✅
+    - Observe and record GPU memory usage for ONNX Runtime and PyTorch backends ✅
+    - Summarize findings and update documentation with recommendations ✅
+    - GPU validation complete: Binary protocol fix confirmed, but native PyTorch outperforms ONNX by 5.2x for batch inference ✅
+    - See STEP_5A_FINDINGS.md for complete report ✅
+    - **Recommendation**: Continue with PyTorch backend (superior performance) or proceed to Step 5B (TensorRT) if Triton features are required
+
 
 Step 5B (Optional): TensorRT Optimization
     - Convert your model to TensorRT (if compatible)
@@ -42,3 +47,12 @@ Step 5B (Optional): TensorRT Optimization
     - Observe and record GPU memory usage for all backends
     - Document any serialization/deserialization overheads found in TensorRT backend
     - Summarize findings and update documentation with recommendations
+
+Step 6 (Optional): Multi-GPU Benchmarking (e.g., 4x RTX A6000)
+    - Update Triton model config (`config.pbtxt`) to set:
+            instance_group [ { kind: KIND_GPU, count: 4 } ]
+    - Ensure the container is started with access to all GPUs (e.g., `--gpus all`)
+    - No Docker rebuild needed if only `config.pbtxt` changes; just update the file in the model repository
+    - Run benchmarking scripts with high concurrency to utilize all GPUs
+    - Compare aggregate throughput and cost vs single-GPU runs
+    - Document any scaling limitations or bottlenecks observed

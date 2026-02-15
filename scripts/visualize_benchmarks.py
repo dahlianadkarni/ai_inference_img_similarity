@@ -179,12 +179,19 @@ def create_comparison_charts(pytorch_data, triton_data, output_dir: Path):
 
 def main():
     """Main entry point."""
-    project_root = Path(__file__).parent.parent
-    results_dir = project_root / 'benchmark_results'
+    import argparse
     
-    # Find the most recent result files
-    pytorch_file = results_dir / 'pytorch_rtxa4000_20260214_090742.json'
-    triton_file = results_dir / 'triton_rtxa4000_20260214_083702.json'
+    parser = argparse.ArgumentParser(description="Visualize PyTorch vs Triton benchmarks")
+    parser.add_argument('pytorch_file', help='Path to PyTorch benchmark JSON')
+    parser.add_argument('triton_file', help='Path to Triton benchmark JSON')
+    parser.add_argument('--output-dir', default=None, help='Output directory for charts')
+    args = parser.parse_args()
+    
+    project_root = Path(__file__).parent.parent
+    results_dir = Path(args.output_dir) if args.output_dir else project_root / 'benchmark_results'
+    
+    pytorch_file = Path(args.pytorch_file)
+    triton_file = Path(args.triton_file)
     
     if not pytorch_file.exists() or not triton_file.exists():
         print("✗ Benchmark result files not found!")

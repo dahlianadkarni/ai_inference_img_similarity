@@ -1,0 +1,290 @@
+{
+  "timestamp": "2026-02-14 11:44:31",
+  "model_info": {
+    "opset_version": 14,
+    "total_nodes": 2272,
+    "op_counts": {
+      "Constant": 714,
+      "Unsqueeze": 279,
+      "Add": 137,
+      "Reshape": 134,
+      "Concat": 123,
+      "Shape": 100,
+      "Gather": 100,
+      "Mul": 99,
+      "Transpose": 97,
+      "Cast": 75,
+      "Sqrt": 62,
+      "Div": 62,
+      "MatMul": 61,
+      "ReduceMean": 52,
+      "Slice": 48,
+      "Sub": 26,
+      "Pow": 26,
+      "Squeeze": 24,
+      "Mod": 12,
+      "Softmax": 12,
+      "Gemm": 12,
+      "Erf": 12,
+      "Conv": 1,
+      "ConstantOfShape": 1,
+      "Equal": 1,
+      "Where": 1,
+      "Expand": 1
+    },
+    "inputs": [
+      {
+        "name": "image",
+        "shape": [
+          0,
+          3,
+          224,
+          224
+        ],
+        "dtype": 1
+      }
+    ],
+    "outputs": [
+      {
+        "name": "embedding",
+        "shape": [
+          0,
+          512
+        ],
+        "dtype": 1
+      }
+    ],
+    "file_size_mb": 335.48
+  },
+  "session_creation": {
+    "mean_ms": 278.85,
+    "min_ms": 261.33,
+    "max_ms": 293.34,
+    "std_ms": 12.14,
+    "iterations": 5
+  },
+  "inference": {
+    "batch_1": {
+      "mean_ms": 29.94,
+      "p50_ms": 29.3,
+      "p95_ms": 32.97,
+      "p99_ms": 35.02,
+      "min_ms": 28.83,
+      "max_ms": 35.52,
+      "images_per_sec": 33.4
+    },
+    "batch_4": {
+      "mean_ms": 81.67,
+      "p50_ms": 80.95,
+      "p95_ms": 83.58,
+      "p99_ms": 89.64,
+      "min_ms": 80.43,
+      "max_ms": 92.06,
+      "images_per_sec": 48.98
+    },
+    "batch_8": {
+      "mean_ms": 152.85,
+      "p50_ms": 151.69,
+      "p95_ms": 159.28,
+      "p99_ms": 162.77,
+      "min_ms": 149.67,
+      "max_ms": 163.98,
+      "images_per_sec": 52.34
+    },
+    "batch_16": {
+      "mean_ms": 290.27,
+      "p50_ms": 288.29,
+      "p95_ms": 301.99,
+      "p99_ms": 304.6,
+      "min_ms": 284.92,
+      "max_ms": 305.15,
+      "images_per_sec": 55.12
+    },
+    "batch_32": {
+      "mean_ms": 585.03,
+      "p50_ms": 577.64,
+      "p95_ms": 619.96,
+      "p99_ms": 639.13,
+      "min_ms": 571.11,
+      "max_ms": 645.5,
+      "images_per_sec": 54.7
+    },
+    "operator_profile": {
+      "total_compute_ms": 37183.541,
+      "top_operators": [
+        {
+          "op": "MatMul",
+          "total_ms": 28153.561,
+          "count": 30195,
+          "pct_of_total": 75.7
+        },
+        {
+          "op": "Gemm",
+          "total_ms": 2643.627,
+          "count": 5940,
+          "pct_of_total": 7.1
+        },
+        {
+          "op": "BiasGelu",
+          "total_ms": 1466.86,
+          "count": 5940,
+          "pct_of_total": 3.9
+        },
+        {
+          "op": "Conv",
+          "total_ms": 1364.533,
+          "count": 495,
+          "pct_of_total": 3.7
+        },
+        {
+          "op": "Transpose",
+          "total_ms": 1227.33,
+          "count": 48015,
+          "pct_of_total": 3.3
+        },
+        {
+          "op": "LayerNormalization",
+          "total_ms": 733.353,
+          "count": 12870,
+          "pct_of_total": 2.0
+        },
+        {
+          "op": "Add",
+          "total_ms": 437.201,
+          "count": 24255,
+          "pct_of_total": 1.2
+        },
+        {
+          "op": "Gather",
+          "total_ms": 349.099,
+          "count": 54945,
+          "pct_of_total": 0.9
+        },
+        {
+          "op": "Mul",
+          "total_ms": 172.575,
+          "count": 23760,
+          "pct_of_total": 0.5
+        },
+        {
+          "op": "Softmax",
+          "total_ms": 148.691,
+          "count": 5940,
+          "pct_of_total": 0.4
+        },
+        {
+          "op": "Unsqueeze",
+          "total_ms": 104.211,
+          "count": 59895,
+          "pct_of_total": 0.3
+        },
+        {
+          "op": "Concat",
+          "total_ms": 101.706,
+          "count": 48510,
+          "pct_of_total": 0.3
+        },
+        {
+          "op": "Reshape",
+          "total_ms": 98.781,
+          "count": 54450,
+          "pct_of_total": 0.3
+        },
+        {
+          "op": "Shape",
+          "total_ms": 52.974,
+          "count": 30195,
+          "pct_of_total": 0.1
+        },
+        {
+          "op": "Slice",
+          "total_ms": 50.41,
+          "count": 23760,
+          "pct_of_total": 0.1
+        }
+      ]
+    }
+  },
+  "serialization": {
+    "batch_1": {
+      "num_floats": 150528,
+      "json_tolist": {
+        "mean_ms": 52.53,
+        "payload_size_kb": 2979.8
+      },
+      "binary": {
+        "mean_ms": 0.01,
+        "payload_size_kb": 588.0
+      },
+      "tolist_only": {
+        "mean_ms": 0.99
+      },
+      "json_vs_binary_speedup": 4799.1
+    },
+    "batch_4": {
+      "num_floats": 602112,
+      "json_tolist": {
+        "mean_ms": 211.38,
+        "payload_size_kb": 11918.1
+      },
+      "binary": {
+        "mean_ms": 0.15,
+        "payload_size_kb": 2352.0
+      },
+      "tolist_only": {
+        "mean_ms": 5.18
+      },
+      "json_vs_binary_speedup": 1403.4
+    },
+    "batch_8": {
+      "num_floats": 1204224,
+      "json_tolist": {
+        "mean_ms": 428.36,
+        "payload_size_kb": 23835.7
+      },
+      "binary": {
+        "mean_ms": 0.26,
+        "payload_size_kb": 4704.0
+      },
+      "tolist_only": {
+        "mean_ms": 11.34
+      },
+      "json_vs_binary_speedup": 1642.3
+    },
+    "batch_16": {
+      "num_floats": 2408448,
+      "json_tolist": {
+        "mean_ms": 887.87,
+        "payload_size_kb": 47672.3
+      },
+      "binary": {
+        "mean_ms": 0.65,
+        "payload_size_kb": 9408.0
+      },
+      "tolist_only": {
+        "mean_ms": 22.78
+      },
+      "json_vs_binary_speedup": 1363.4
+    },
+    "batch_32": {
+      "num_floats": 4816896,
+      "json_tolist": {
+        "mean_ms": 1842.17,
+        "payload_size_kb": 95344.2
+      },
+      "binary": {
+        "mean_ms": 1.74,
+        "payload_size_kb": 18816.0
+      },
+      "tolist_only": {
+        "mean_ms": 47.64
+      },
+      "json_vs_binary_speedup": 1057.6
+    }
+  },
+  "preprocessing": {
+    "simple_normalize_transpose_ms": 0.101,
+    "openclip_full_preprocess_ms": 0.524,
+    "note": "Triton receives raw tensors (already preprocessed); PyTorch server does preprocessing internally"
+  }
+}

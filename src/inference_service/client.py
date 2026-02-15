@@ -19,6 +19,12 @@ import httpx
 import numpy as np
 from PIL import Image
 
+try:
+    import tritonclient.http as httpclient
+    TRITONCLIENT_AVAILABLE = True
+except ImportError:
+    TRITONCLIENT_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -167,7 +173,7 @@ class InferenceClient:
             raise
     
     def _embed_triton(self, images: List[Image.Image]) -> np.ndarray:
-        """Embed images using Triton backend."""
+        """Embed images using Triton backend with binary protocol."""
         # Preprocess images to model input format
         # Triton expects: [batch, channels, height, width] float32 in range [0, 1]
         batch = []
@@ -189,40 +195,57 @@ class InferenceClient:
         # Stack into batch
         batch_array = np.array(batch, dtype=np.float32)
         
-        # Prepare Triton inference request
-        payload = {
-            "inputs": [
-                {
-                    "name": "image",
-                    "shape": list(batch_array.shape),
-                    "datatype": "FP32",
-                    "data": batch_array.flatten().tolist()
-                }
-            ],
-            "outputs": [
-                {
-                    "name": "embedding"
-                }
-            ]
-        }
-        
-        # Send request
+        # Send request using binary protocol if available
         try:
-            response = self.client.post(
-                f"{self.service_url}/v2/models/openclip_vit_b32/infer",
-                json=payload,
-                headers={"Content-Type": "application/json"}
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            # Extract embeddings
-            embeddings = np.array(result['outputs'][0]['data'], dtype=np.float32)
-            
-            # Reshape to (batch_size, embedding_dim)
-            embeddings = embeddings.reshape(len(images), -1)
-            
-            return embeddings
+            if TRITONCLIENT_AVAILABLE:
+                # Use tritonclient with binary data (1000x+ faster than JSON)
+                url_parts = self.service_url.replace('http://', '').replace('https://', '').split(':')
+                host = url_parts[0]
+                port = url_parts[1] if len(url_parts) > 1 else '8000'
+                
+                triton_client = httpclient.InferenceServerClient(url=f"{host}:{port}")
+                inputs = [httpclient.InferInput("image", batch_array.shape, "FP32")]
+                inputs[0].set_data_from_numpy(batch_array)
+                outputs = [httpclient.InferRequestedOutput("embedding")]
+                
+                result = triton_client.infer("openclip_vit_b32", inputs, outputs=outputs)
+                embeddings = result.as_numpy("embedding")
+                
+                return embeddings
+            else:
+                # Fallback to JSON (slow, but works without tritonclient)
+                logger.warning("tritonclient not available, using slow JSON protocol. Install with: pip install tritonclient[http]")
+                payload = {
+                    "inputs": [
+                        {
+                            "name": "image",
+                            "shape": list(batch_array.shape),
+                            "datatype": "FP32",
+                            "data": batch_array.flatten().tolist()
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "name": "embedding"
+                        }
+                    ]
+                }
+                
+                response = self.client.post(
+                    f"{self.service_url}/v2/models/openclip_vit_b32/infer",
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                )
+                response.raise_for_status()
+                result = response.json()
+                
+                # Extract embeddings
+                embeddings = np.array(result['outputs'][0]['data'], dtype=np.float32)
+                
+                # Reshape to (batch_size, embedding_dim)
+                embeddings = embeddings.reshape(len(images), -1)
+                
+                return embeddings
         
         except Exception as e:
             logger.error(f"Failed to embed images with Triton: {e}")

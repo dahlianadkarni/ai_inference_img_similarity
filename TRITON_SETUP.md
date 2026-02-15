@@ -157,14 +157,18 @@ docker buildx build --platform linux/amd64 \
   yourdockeruser/photo-duplicate-triton:gpu-linux-amd64
 
 **2. Expose ports:**
-  - 8000 (HTTP)
-  - 8001 (gRPC)
-  - 8002 (metrics)
+  - 8000 (HTTP API)
+  - 8001 (gRPC API)
+  - 8002 (Prometheus metrics)
+  - 22 (SSH access for debugging - optional but recommended)
     
+  > **Important**: Ports must be specified when creating the instance. They cannot be added to a running instance.
+  
   In Vast.ai, set up port mapping so that external ports map to container ports 8000, 8001, 8002. For example:
   - External 8000 → Container 8000
   - External 8001 → Container 8001
   - External 8002 → Container 8002
+  - External (any) → Container 22 (for SSH)
 
 **3. Environment variables:**
   - For Triton deployment, you do NOT need to set HOST, MODEL_NAME, MODEL_PRETRAINED, or LOG_LEVEL. These are only required for the PyTorch FastAPI backend.

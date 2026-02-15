@@ -53,6 +53,7 @@ from typing import Dict, List, Optional
 import numpy as np
 import requests
 from PIL import Image
+import tritonclient.http as httpclient
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -182,26 +183,38 @@ def bench_single_pytorch(url: str, iterations: int) -> List[float]:
 
 def bench_single_triton(url: str, iterations: int) -> List[float]:
     """Benchmark single-image inference on Triton backend."""
+    # Extract host and port from URL
+    url_parts = url.replace('http://', '').replace('https://', '').split(':')
+    host = url_parts[0]
+    port = url_parts[1] if len(url_parts) > 1 else '8000'
+    
+    client = httpclient.InferenceServerClient(url=f"{host}:{port}")
+    
     img = create_test_images(1)[0]
     tensor = image_to_triton_tensor(img)
     batch = np.expand_dims(tensor, 0)
-    payload = {
-        "inputs": [{"name": "image", "shape": list(batch.shape), "datatype": "FP32",
-                     "data": batch.flatten().tolist()}],
-        "outputs": [{"name": "embedding"}],
-    }
+    
+    # Create input with binary data
+    inputs = [httpclient.InferInput("image", batch.shape, "FP32")]
+    inputs[0].set_data_from_numpy(batch)
+    outputs = [httpclient.InferRequestedOutput("embedding")]
+    
     latencies = []
 
     # Warm-up
     for _ in range(3):
-        requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
+        try:
+            client.infer("openclip_vit_b32", inputs, outputs=outputs)
+        except Exception:
+            pass
 
     for _ in range(iterations):
         t0 = time.perf_counter()
-        r = requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
-        latencies.append(time.perf_counter() - t0)
-        if r.status_code != 200:
-            latencies.pop()
+        try:
+            client.infer("openclip_vit_b32", inputs, outputs=outputs)
+            latencies.append(time.perf_counter() - t0)
+        except Exception:
+            pass
     return latencies
 
 
@@ -229,24 +242,36 @@ def bench_batch_pytorch(url: str, batch_size: int, iterations: int) -> List[floa
 
 def bench_batch_triton(url: str, batch_size: int, iterations: int) -> List[float]:
     """Benchmark batch inference on Triton backend."""
+    # Extract host and port from URL
+    url_parts = url.replace('http://', '').replace('https://', '').split(':')
+    host = url_parts[0]
+    port = url_parts[1] if len(url_parts) > 1 else '8000'
+    
+    client = httpclient.InferenceServerClient(url=f"{host}:{port}")
+    
     imgs = create_test_images(batch_size)
     tensors = np.array([image_to_triton_tensor(im) for im in imgs], dtype=np.float32)
-    payload = {
-        "inputs": [{"name": "image", "shape": list(tensors.shape), "datatype": "FP32",
-                     "data": tensors.flatten().tolist()}],
-        "outputs": [{"name": "embedding"}],
-    }
+    
+    # Create input with binary data
+    inputs = [httpclient.InferInput("image", tensors.shape, "FP32")]
+    inputs[0].set_data_from_numpy(tensors)
+    outputs = [httpclient.InferRequestedOutput("embedding")]
+    
     latencies = []
 
     # Warm-up
-    requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
+    try:
+        client.infer("openclip_vit_b32", inputs, outputs=outputs)
+    except Exception:
+        pass
 
     for _ in range(iterations):
         t0 = time.perf_counter()
-        r = requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
-        latencies.append(time.perf_counter() - t0)
-        if r.status_code != 200:
-            latencies.pop()
+        try:
+            client.infer("openclip_vit_b32", inputs, outputs=outputs)
+            latencies.append(time.perf_counter() - t0)
+        except Exception:
+            pass
     return latencies
 
 
@@ -289,25 +314,39 @@ def bench_concurrent_pytorch(url: str, total_requests: int, concurrency: int) ->
 
 def bench_concurrent_triton(url: str, total_requests: int, concurrency: int) -> Dict:
     """Fire concurrent single-image requests at Triton backend (tests dynamic batching)."""
+    # Extract host and port from URL
+    url_parts = url.replace('http://', '').replace('https://', '').split(':')
+    host = url_parts[0]
+    port = url_parts[1] if len(url_parts) > 1 else '8000'
+    
     img = create_test_images(1)[0]
     tensor = image_to_triton_tensor(img)
     batch = np.expand_dims(tensor, 0)
-    payload = {
-        "inputs": [{"name": "image", "shape": list(batch.shape), "datatype": "FP32",
-                     "data": batch.flatten().tolist()}],
-        "outputs": [{"name": "embedding"}],
-    }
 
     # Warm-up
-    requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
+    try:
+        client = httpclient.InferenceServerClient(url=f"{host}:{port}")
+        inputs = [httpclient.InferInput("image", batch.shape, "FP32")]
+        inputs[0].set_data_from_numpy(batch)
+        outputs = [httpclient.InferRequestedOutput("embedding")]
+        client.infer("openclip_vit_b32", inputs, outputs=outputs)
+    except Exception:
+        pass
 
     latencies = []
     start_wall = time.perf_counter()
 
     def _call():
         t0 = time.perf_counter()
-        r = requests.post(f"{url}/v2/models/openclip_vit_b32/infer", json=payload)
-        return time.perf_counter() - t0, r.status_code
+        try:
+            client = httpclient.InferenceServerClient(url=f"{host}:{port}")
+            inputs = [httpclient.InferInput("image", batch.shape, "FP32")]
+            inputs[0].set_data_from_numpy(batch)
+            outputs = [httpclient.InferRequestedOutput("embedding")]
+            client.infer("openclip_vit_b32", inputs, outputs=outputs)
+            return time.perf_counter() - t0, 200
+        except Exception:
+            return time.perf_counter() - t0, 500
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
         futures = [pool.submit(_call) for _ in range(total_requests)]

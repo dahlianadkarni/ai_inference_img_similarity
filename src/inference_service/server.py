@@ -120,8 +120,37 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def startup():
         """Load default model at startup."""
+        import torch
+        
         logger.info("Starting inference service...")
+        
+        # Log GPU availability
+        logger.info("="*60)
+        logger.info("GPU Configuration:")
+        if torch.cuda.is_available():
+            logger.info(f"  CUDA Available: YES")
+            logger.info(f"  CUDA Version: {torch.version.cuda}")
+            logger.info(f"  Device Count: {torch.cuda.device_count()}")
+            for i in range(torch.cuda.device_count()):
+                gpu_name = torch.cuda.get_device_name(i)
+                gpu_mem = torch.cuda.get_device_properties(i).total_memory / 1024**3
+                logger.info(f"  GPU {i}: {gpu_name} ({gpu_mem:.2f} GB)")
+        else:
+            logger.warning("  CUDA Available: NO - Running on CPU!")
+        logger.info("="*60)
+        
         InferenceService.load_model("ViT-B-32", "openai")
+        
+        # Verify model is on GPU
+        embedder = InferenceService._instance._embedder if InferenceService._instance else None
+        if embedder:
+            model_device = str(next(embedder.model.parameters()).device)
+            logger.info(f"Model loaded on device: {model_device}")
+            if torch.cuda.is_available() and "cuda" not in model_device:
+                logger.error("⚠️  WARNING: CUDA is available but model is on CPU!")
+            elif "cuda" in model_device:
+                logger.info("✓ Model successfully loaded on GPU")
+        
         logger.info("Inference service ready")
     
     @app.get("/health")
@@ -139,6 +168,42 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=503, detail="No model loaded")
         
         return embedder.get_model_info()
+    
+    @app.get("/gpu-info")
+    async def gpu_info():
+        """Get detailed GPU information and verify GPU is being used."""
+        import torch
+        
+        info = {
+            "cuda_available": torch.cuda.is_available(),
+            "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
+            "device_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        }
+        
+        if torch.cuda.is_available():
+            info["devices"] = []
+            for i in range(torch.cuda.device_count()):
+                info["devices"].append({
+                    "id": i,
+                    "name": torch.cuda.get_device_name(i),
+                    "total_memory_gb": round(torch.cuda.get_device_properties(i).total_memory / 1024**3, 2),
+                    "current_device": i == torch.cuda.current_device()
+                })
+            
+            # Check if model is actually on GPU
+            embedder = InferenceService._instance._embedder if InferenceService._instance else None
+            if embedder:
+                model_device = str(next(embedder.model.parameters()).device)
+                info["model_device"] = model_device
+                info["model_on_gpu"] = "cuda" in model_device
+            else:
+                info["model_device"] = "not loaded"
+                info["model_on_gpu"] = False
+        else:
+            info["model_on_gpu"] = False
+            info["warning"] = "CUDA not available - running on CPU"
+        
+        return JSONResponse(content=info)
     
     @app.post("/embed/base64", response_model=EmbeddingResponse)
     async def embed_base64(request: EmbeddingRequest):

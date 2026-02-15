@@ -1,12 +1,19 @@
 # Triton Inference Server Dockerfile for OpenCLIP embeddings
-# For deployment on NVIDIA GPU instances
+# For deployment on NVIDIA GPU instances (Vast.ai, RunPod, etc.)
+#
+# The model config (config.pbtxt) is baked into this image with
+# GPU-optimized defaults (KIND_GPU, CUDA graphs, 10ms queue delay).
+# No manual config step is needed after starting the container.
+#
+# For local CPU testing, use build_triton_local.sh which overrides
+# config.pbtxt with a CPU version at container start time.
 
 FROM nvcr.io/nvidia/tritonserver:24.01-py3
 
 # Set working directory
 WORKDIR /workspace
 
-# Copy model repository
+# Copy model repository (includes GPU-optimized config.pbtxt)
 COPY model_repository/ /models/
 
 # Expose Triton ports

@@ -86,7 +86,10 @@ dahlianadkarni/photo-duplicate-inference:gpu-linux-amd64
 4. **Disk Space:** 30 GB minimum
 
 5. **Ports:**
-   - Expose port **8002** (usually auto-detected)
+   - Expose port **8002** (inference API - usually auto-detected)
+   - Expose port **22** (SSH access for debugging - optional but recommended)
+   
+   > **Note**: Ports must be specified at instance creation time. They cannot be added later to a running instance.
 
 ### Step 4: Launch Instance
 

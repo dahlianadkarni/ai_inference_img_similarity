@@ -1,13 +1,19 @@
 # =============================================================================
-# OpenCLIP ViT-B-32 — Triton Model Configuration
+# OpenCLIP ViT-B-32 — Triton Model Configuration (GPU-Optimized)
 # =============================================================================
 #
-# This config is used by NVIDIA Triton Inference Server to load and serve
-# the ONNX-exported OpenCLIP ViT-B-32 model.
+# This config is baked into the Docker image (Dockerfile.triton) so that
+# every new Vast.ai instance starts with optimized GPU defaults — no manual
+# config step needed.
 #
-# CONFIGURATION PROFILES:
-#   - LOCAL (CPU):  kind: KIND_CPU, no CUDA graphs (current, for Mac testing)
-#   - CLOUD (GPU):  kind: KIND_GPU, CUDA graphs enabled (deploy_triton_gpu.sh swaps this)
+# PROFILE: GPU (production default)
+#   - kind: KIND_GPU with CUDA graphs enabled
+#   - Optimized for RTX A4000 / RTX 3090 / A40 class GPUs (8-24 GB VRAM)
+#
+# FOR LOCAL CPU TESTING:
+#   Override at container start by bind-mounting a CPU config:
+#     docker run -v $PWD/model_repository:/models ...
+#   Or use build_triton_local.sh which generates a CPU config on the fly.
 #
 # DYNAMIC BATCHING RATIONALE:
 #   preferred_batch_size: [4, 8, 16, 32]
@@ -16,16 +22,19 @@
 #     - 16: Efficient GPU utilization for moderate load
 #     - 32: Maximum throughput under high concurrency (matches max_batch_size)
 #
-#   max_queue_delay_microseconds: 5000 (5ms)
-#     - Triton waits up to 5ms to accumulate a larger batch before executing.
-#     - Trade-off: higher delay = larger batches = better throughput,
-#       but adds latency to individual requests.
-#     - 5ms is a good default; tune up to 50ms for batch-heavy workloads,
-#       or down to 1ms for latency-sensitive interactive use.
+#   max_queue_delay_microseconds: 10000 (10ms)
+#     - Triton waits up to 10ms to accumulate a larger batch before executing.
+#     - 10ms is a good balance for mixed interactive + batch workloads.
+#     - Tune down to 1-5ms for latency-sensitive interactive use,
+#       or up to 50ms for batch-heavy workloads.
 #
 # max_batch_size: 32
 #   - ViT-B-32 with FP32 at batch=32 uses ~2.5GB VRAM.
 #   - Safe for 8GB+ GPUs. Increase to 64 on 24GB+ GPUs for more throughput.
+#
+# CUDA GRAPHS:
+#   Enabled by default. Pre-captures GPU kernel launch sequences for
+#   reduced launch overhead (~10-20% latency improvement on repeated shapes).
 #
 # =============================================================================
 
@@ -53,19 +62,24 @@ output [
 # into batches for better GPU utilization.
 dynamic_batching {
   preferred_batch_size: [ 4, 8, 16, 32 ]
-  max_queue_delay_microseconds: 5000
+  max_queue_delay_microseconds: 10000
 }
 
-# Instance configuration — CPU for local testing on Mac.
-# For GPU deployment, deploy_triton_gpu.sh replaces this with:
-#   instance_group [ { count: 1, kind: KIND_GPU, gpus: [0] } ]
-#   optimization { cuda { graphs: true } }
+# Instance configuration — GPU (production default)
 instance_group [
   {
     count: 1
-    kind: KIND_CPU
+    kind: KIND_GPU
+    gpus: [ 0 ]
   }
 ]
 
 # Version policy — only load version 1 explicitly
 version_policy: { specific { versions: 1 }}
+
+# CUDA graph optimization — reduces kernel launch overhead
+optimization {
+  cuda {
+    graphs: true
+  }
+}

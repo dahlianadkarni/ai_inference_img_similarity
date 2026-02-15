@@ -1,0 +1,43 @@
+# Auto-generated config for GPU tuning experiment
+# Variation: Instance count = 1, queue delay = 5ms
+
+name: "openclip_vit_b32"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "embedding"
+    data_type: TYPE_FP32
+    dims: [ 512 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 5000
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+version_policy: { specific { versions: 1 } }
+
+optimization {
+  cuda {
+    graphs: true
+  }
+}
