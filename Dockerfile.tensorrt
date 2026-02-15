@@ -1,0 +1,58 @@
+# =============================================================================
+# Triton + TensorRT Dockerfile for OpenCLIP embeddings (Step 5B)
+# =============================================================================
+#
+# This extends the Step 4 Triton setup with TensorRT optimization via
+# Triton's ONNX Runtime TensorRT Execution Provider (TRT EP).
+#
+# No separate TRT conversion step is needed — ONNX Runtime automatically
+# delegates supported ops to TensorRT at model load time, using the TRT
+# libraries already bundled in the Triton container.
+#
+# Both models are served simultaneously:
+#   - openclip_vit_b32     → ONNX Runtime + CUDA EP (baseline)
+#   - openclip_vit_b32_trt → ONNX Runtime + TensorRT EP (optimized, FP16)
+#
+# This allows A/B benchmarking on the same instance without rebuilding.
+#
+# Build:
+#   docker buildx build --platform linux/amd64 \
+#     -f Dockerfile.tensorrt \
+#     -t dahlianadkarni/photo-duplicate-triton:tensorrt-gpu \
+#     --push .
+#
+# Run:
+#   docker run --gpus all -p 8000:8000 -p 8001:8001 -p 8002:8002 \
+#     dahlianadkarni/photo-duplicate-triton:tensorrt-gpu
+# =============================================================================
+
+FROM nvcr.io/nvidia/tritonserver:24.01-py3
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy model repository (ONNX model + configs for both ONNX and TRT)
+COPY model_repository/ /models/
+
+# Copy the entrypoint script that sets up the TRT model and starts Triton
+COPY scripts/triton_trt_entrypoint.sh /workspace/entrypoint.sh
+RUN chmod +x /workspace/entrypoint.sh
+
+# Create TRT engine cache directory
+RUN mkdir -p /tmp/trt_cache
+
+# Environment variables
+ENV MODEL_REPO=/models
+
+# Expose Triton ports:
+#   8000 = HTTP
+#   8001 = gRPC
+#   8002 = Metrics
+EXPOSE 8000 8001 8002
+
+# Health check — longer start-period for TRT EP's first-load compilation
+HEALTHCHECK --interval=30s --timeout=10s --start-period=600s --retries=5 \
+    CMD curl -f http://localhost:8000/v2/health/ready || exit 1
+
+# Use the entrypoint script
+ENTRYPOINT ["/workspace/entrypoint.sh"]

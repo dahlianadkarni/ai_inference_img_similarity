@@ -1,0 +1,82 @@
+# =============================================================================
+# OpenCLIP ViT-B-32 — TensorRT-Accelerated ONNX Configuration for Triton
+# =============================================================================
+#
+# This config serves the SAME ONNX model as openclip_vit_b32, but tells
+# Triton's ONNX Runtime to use the TensorRT Execution Provider (TRT EP)
+# instead of the default CUDA EP.
+#
+# HOW IT WORKS:
+#   - Triton loads the ONNX model using ONNX Runtime
+#   - ONNX Runtime delegates supported ops to TensorRT (FP16)
+#   - Unsupported ops fall back to CUDA EP automatically
+#   - TRT subgraph is cached after first load (~2-5 min initial startup)
+#
+# ADVANTAGES over standalone TensorRT .plan files:
+#   - No separate conversion step or trtexec dependency
+#   - Uses TRT libraries already bundled in the Triton container
+#   - Portable across GPU architectures (TRT EP rebuilds per-GPU)
+#   - Same ONNX model file shared with baseline config
+#
+# PROFILE: GPU + TensorRT EP (maximum throughput)
+#   - backend: onnxruntime (with TRT execution accelerator)
+#   - FP16 precision via TRT EP — ~1.5-2x faster than CUDA EP
+#   - Dynamic batching with same settings as ONNX config
+#
+# =============================================================================
+
+name: "openclip_vit_b32_trt"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "embedding"
+    data_type: TYPE_FP32
+    dims: [ 512 ]
+  }
+]
+
+# Dynamic batching — same settings as ONNX config for fair comparison
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 10000
+}
+
+# Instance configuration — GPU
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+# Version policy — only load version 1
+version_policy: { specific { versions: 1 }}
+
+# TensorRT Execution Provider via ONNX Runtime
+# This is the key difference from the baseline openclip_vit_b32 config.
+# ONNX Runtime will use TRT for supported subgraphs (FP16) and fall back
+# to CUDA EP for any unsupported ops.
+optimization {
+  execution_accelerators {
+    gpu_execution_accelerator : [
+      {
+        name : "tensorrt"
+        parameters { key: "precision_mode" value: "FP16" }
+        parameters { key: "max_workspace_size_bytes" value: "4294967296" }
+        parameters { key: "trt_engine_cache_enable" value: "1" }
+        parameters { key: "trt_engine_cache_path" value: "/tmp/trt_cache" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "ONNX_CUDA_EP": {
+    "client_mean_ms": 359.0011833,
+    "client_min_ms": 209.469417,
+    "client_p50_ms": 338.50235399999997,
+    "server_compute_ms": 31.148400000000002,
+    "server_request_ms": 41.9481
+  },
+  "ONNX_TRT_EP": {
+    "client_mean_ms": 453.8395459,
+    "client_min_ms": 241.03008300000005,
+    "client_p50_ms": 453.6188335000006,
+    "server_compute_ms": 4.732,
+    "server_request_ms": 15.857
+  }
+}

@@ -1,0 +1,126 @@
+# =============================================================================
+# Step 6A: Docker Compose for 3-Way Backend Comparison
+# =============================================================================
+#
+# This compose file deploys all 3 inference backends on a single GPU instance:
+#   1. PyTorch FastAPI (Step 3)
+#   2. Triton ONNX CUDA EP (Step 4/5A)
+#   3. Triton TensorRT EP (Step 5B)
+#
+# All services share the same GPU and can be benchmarked simultaneously.
+#
+# Deploy to Vast.ai:
+#   1. Build and push images:
+#      ./deploy_step6a.sh build
+#   2. SSH into Vast.ai instance
+#   3. Upload this file and run:
+#      docker-compose -f docker-compose-step6a.yml up -d
+#
+# Port Mapping for Vast.ai:
+#   Map these container ports to Vast.ai public ports:
+#   - 8002  → PyTorch HTTP
+#   - 8010  → Triton ONNX HTTP
+#   - 8011  → Triton ONNX gRPC
+#   - 8012  → Triton ONNX Metrics
+#   - 8020  → Triton TRT HTTP
+#   - 8021  → Triton TRT gRPC
+#   - 8022  → Triton TRT Metrics
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Service 1: PyTorch FastAPI Backend (Step 3)
+  # ---------------------------------------------------------------------------
+  pytorch:
+    image: dahlianadkarni/photo-duplicate-inference:gpu-linux-amd64
+    container_name: step6a-pytorch
+    ports:
+      - "8002:8002"
+    environment:
+      - MODEL_NAME=ViT-B-32
+      - MODEL_PRETRAINED=openai
+      - HOST=0.0.0.0
+      - PORT=8002
+      - LOG_LEVEL=info
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Service 2: Triton ONNX CUDA EP (Step 4/5A)
+  # ---------------------------------------------------------------------------
+  triton-onnx:
+    image: dahlianadkarni/photo-duplicate-triton:gpu-linux-amd64
+    container_name: step6a-triton-onnx
+    ports:
+      - "8010:8000"  # HTTP
+      - "8011:8001"  # gRPC
+      - "8012:8002"  # Metrics
+    environment:
+      - MODEL_REPOSITORY=/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Service 3: Triton TensorRT EP (Step 5B)
+  # ---------------------------------------------------------------------------
+  triton-trt:
+    image: dahlianadkarni/photo-duplicate-triton:tensorrt-gpu
+    container_name: step6a-triton-trt
+    ports:
+      - "8020:8000"  # HTTP
+      - "8021:8001"  # gRPC
+      - "8022:8002"  # Metrics
+    environment:
+      - MODEL_REPOSITORY=/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 30s
+      timeout: 10s
+      start_period: 600s  # TRT EP needs more time for initial engine compilation
+      retries: 3
+    restart: unless-stopped
+
+# =============================================================================
+# Notes:
+# 
+# 1. All 3 services use CUDA_VISIBLE_DEVICES=0 (shared GPU)
+# 2. TRT service has longer start_period (600s) for initial engine compilation
+# 3. Subsequent starts are fast due to cached TRT engines
+# 4. On Vast.ai, map these ports through the web UI or CLI
+# 5. Use scripts/benchmark_all_three.py from your Mac to test
+# 6. Use scripts/benchmark_all_three_local.py after SSH for faster benchmarks
+# =============================================================================
