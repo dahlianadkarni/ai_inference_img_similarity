@@ -58,17 +58,21 @@ Step 6: Final Comparison & Multi-GPU Scaling (Optional)
         - PyTorch FastAPI (Step 3)
         - Triton ONNX CUDA EP (Step 4/5A)
         - Triton ONNX TensorRT EP (Step 5B)
-    - Use Docker Compose to run 3 containers with different ports on same instance:
+    - **Deployment Approach**: Single all-in-one Docker image (for Vast.ai standard Docker instances)
         - PyTorch: port 8002
         - Triton ONNX: ports 8010/8011/8012 (HTTP/gRPC/Metrics)
         - Triton TRT: ports 8020/8021/8022 (HTTP/gRPC/Metrics)
-        - See `docker-compose-step6a.yml` and `deploy_step6a.sh`
-    - Two benchmarking approaches (run both for comprehensive analysis):
+        - See `Dockerfile.step6a-all`, `scripts/step6a_entrypoint.sh`, and `deploy_step6a_single_image.sh`
+        - All 3 services start automatically via entrypoint script
+        - TRT engine compilation happens on first load (2-5 min)
+    - Alternative: Docker Compose approach (requires VM instance with `vms_enabled=true`)
+        - See `docker-compose-step6a.yml` and `deploy_step6a.sh` (not used for standard Vast.ai instances)
+    - Benchmarking approach:
         - **Remote**: `scripts/benchmark_all_three.py` from your Mac
             - Includes network latency (~200-400ms) but relative comparison still valid
             - Captures server-side metrics from Triton `/metrics` to show pure GPU time
             - No SSH required, easier to run
-        - **Local**: `scripts/benchmark_all_three_local.py` after SSH into instance
+        - **Local**: `scripts/benchmark_all_three_local.py` after SSH into instance (optional)
             - Eliminates network latency for true backend performance
             - More accurate absolute timings
             - Requires SSH access and pip install dependencies

@@ -1,0 +1,116 @@
+# =============================================================================
+# Step 6A: All-in-One Docker Image for 3-Backend Comparison
+# =============================================================================
+#
+# This single Docker image runs all 3 backends in one container:
+#   1. PyTorch FastAPI (port 8002)
+#   2. Triton ONNX CUDA EP (ports 8010/8011/8012)
+#   3. Triton TensorRT EP (ports 8020/8021/8022)
+#
+# Use this for Vast.ai standard Docker instances (no Docker-in-Docker support).
+#
+# Build:
+#   docker buildx build --platform linux/amd64 \
+#     -f Dockerfile.step6a \
+#     -t dahlianadkarni/photo-duplicate-step6a:latest \
+#     --push .
+#
+# Run on Vast.ai:
+#   1. Create instance with this image
+#   2. Expose ports: 8002, 8010, 8011, 8012, 8020, 8021, 8022
+#   3. All services start automatically via entrypoint
+#
+# =============================================================================
+
+FROM nvcr.io/nvidia/tritonserver:24.01-py3
+
+# Set working directory
+WORKDIR /workspace
+
+# =============================================================================
+# Install System Dependencies
+# =============================================================================
+
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    curl \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# Install Python Dependencies for PyTorch Backend
+# =============================================================================
+
+COPY requirements.txt requirements-ml.txt ./
+
+# Install PyTorch with CUDA support
+RUN pip3 install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Install other dependencies
+RUN pip3 install --no-cache-dir -r requirements.txt && \
+    pip3 install --no-cache-dir -r requirements-ml.txt
+
+# =============================================================================
+# Copy Application Code
+# =============================================================================
+
+# PyTorch backend code
+COPY src/ ./src/
+
+# Model repository for Triton (both ONNX and TRT configs)
+COPY model_repository/ /models/
+
+# Entrypoint script
+COPY scripts/step6a_entrypoint.sh /workspace/step6a_entrypoint.sh
+RUN chmod +x /workspace/step6a_entrypoint.sh
+
+# =============================================================================
+# Create TRT Engine Cache Directory
+# =============================================================================
+
+RUN mkdir -p /tmp/trt_cache
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+
+# PyTorch backend
+ENV MODEL_NAME=ViT-B-32
+ENV MODEL_PRETRAINED=openai
+ENV PYTORCH_PORT=8002
+
+# Python path
+ENV PYTHONPATH=/workspace
+ENV PYTHONUNBUFFERED=1
+
+# CUDA
+ENV CUDA_VISIBLE_DEVICES=0
+
+# =============================================================================
+# Expose Ports
+# =============================================================================
+
+# PyTorch
+EXPOSE 8002
+
+# Triton ONNX
+EXPOSE 8010 8011 8012
+
+# Triton TRT
+EXPOSE 8020 8021 8022
+
+# =============================================================================
+# Health Check
+# =============================================================================
+
+# Check if all services are running
+HEALTHCHECK --interval=30s --timeout=10s --start-period=600s --retries=3 \
+    CMD curl -f http://localhost:8002/health && \
+        curl -f http://localhost:8010/v2/health/ready && \
+        curl -f http://localhost:8020/v2/health/ready || exit 1
+
+# =============================================================================
+# Entrypoint
+# =============================================================================
+
+ENTRYPOINT ["/workspace/step6a_entrypoint.sh"]
