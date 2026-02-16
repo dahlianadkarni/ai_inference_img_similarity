@@ -3,12 +3,52 @@
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
 **📚 Documentation:**
-- **[PLAN.md](PLAN.md)** — 5-step infrastructure learning plan (Steps 1, 2, 3 & 4 complete ✅)
+- **[PLAN.md](PLAN.md)** — 6-step infrastructure learning plan (all steps complete ✅)
+- **[DOCKER_README.md](DOCKER_README.md)** — Step 2: Docker containerization guide with security best practices
+- **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Step 3: Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
 - **[TRITON_SETUP.md](TRITON_SETUP.md)** — Step 4: Triton Inference Server setup, benchmarking, and trade-offs
-- **[DOCKER_README.md](DOCKER_README.md)** — Docker containerization guide with security best practices
-- **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
+- **[STEP_5A_FINDINGS.md](STEP_5A_FINDINGS.md)** — Step 5A: ONNX Runtime optimization report (binary protocol fix, profiling)
+- **[STEP_5B_TENSORRT.md](STEP_5B_TENSORRT.md)** — Step 5B: TensorRT EP setup guide and deployment
+- **[STEP_5B_GPU_RESULTS.md](STEP_5B_GPU_RESULTS.md)** — Step 5B: TensorRT vs ONNX benchmark results
+- **[STEP_6A_A100_RESULTS.md](STEP_6A_A100_RESULTS.md)** — Step 6A: 3-way backend comparison on A100 SXM4
+- **[STEP_6A_RTX4080_RESULTS.md](STEP_6A_RTX4080_RESULTS.md)** — Step 6A: RTX 4080 comparison (consumer vs datacenter GPU)
+- **[STEP_6B_RESULTS.md](STEP_6B_RESULTS.md)** — Step 6B: 4x RTX 4080 multi-GPU scaling study
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8001)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
+
+**🎬 Project Presentation:**
+- **[presentation/README.md](presentation/README.md)** — Complete presentation materials (slides, executive summary, technical deep-dive)
+- **[presentation/slides.html](presentation/slides.html)** — Interactive HTML slide deck (18 slides, open in browser)
+
+---
+
+## 📊 Key Learnings: Backend Comparison Summary
+
+After benchmarking 3 inference backends (PyTorch, Triton ONNX, Triton TensorRT) across multiple GPUs, here are the key takeaways:
+
+### Performance by Backend
+
+| Backend | Best For | GPU Compute (A100) | Client Latency (A100) | When to Use |
+|---------|----------|:------------------:|:---------------------:|-------------|
+| **PyTorch FastAPI** | Remote clients | 56.9ms | **56.9ms** ⚡ | Client-facing API (accepts JPEG) |
+| **Triton ONNX CUDA EP** | Server-side | **4.4ms** ⚡ | 182.9ms | Local inference, batch processing |
+| **Triton TensorRT EP** | Consumer GPUs | 2.0ms (RTX 4080) | 336ms | RTX GPUs, max GPU efficiency |
+
+### Top 5 Insights
+
+1. **Protocol Design > Compute Optimization**: PyTorch wins for remote clients (56.9ms) despite Triton being 12.8× faster at GPU compute (4.4ms) — because PyTorch accepts 10KB JPEGs while Triton requires 602KB float tensors.
+
+2. **GPU Architecture Matters**: TensorRT is 2.9× faster on RTX 4080 but 6.5× slower on A100. Consumer vs datacenter GPUs have opposite optimization profiles.
+
+3. **Serialization Bottlenecks Are Real**: JSON `.tolist()` was 1,000–4,800× slower than binary encoding, masking all GPU optimizations. Always profile the full pipeline.
+
+4. **Multi-GPU Scaling Isn't Free**: 4× RTX 4080 delivered only 1.8× throughput (45% efficiency) — network/CPU became the bottleneck, not GPU.
+
+5. **Production Recommendation**: Use PyTorch FastAPI for client-facing APIs + Triton ONNX as a local inference backend for batch workloads.
+
+**📈 Full benchmark data:** [presentation/04_BENCHMARK_RESULTS.md](presentation/04_BENCHMARK_RESULTS.md)
+
+---
 
 ## What It Does
 
@@ -150,7 +190,9 @@ The app uses a **client-service architecture** — the same pattern used by prod
 | Backend | Docker Image | Ports | Status |
 |---------|-------------|-------|--------|
 | PyTorch + FastAPI | `Dockerfile.gpu` | 8002 | ✅ Step 3 |
-| NVIDIA Triton (ONNX) | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4 |
+| NVIDIA Triton (ONNX CUDA EP) | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4/5A |
+| NVIDIA Triton (TensorRT EP) | `Dockerfile.tensorrt` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 5B |
+| All 3 backends (unified) | `Dockerfile.step6a-all` | 8002 (PyTorch), 8003/8004/8005 (Triton) | ✅ Step 6A |
 
 ```bash
 # Switch backends with environment variables:
@@ -185,9 +227,12 @@ See [DOCKER_README.md](DOCKER_README.md) for containerization details.
 
 - src/scanner/ — scanning + AppleScript Photos export
 - src/embedding/ — OpenCLIP embedding generation + storage
-- src/inference_service/ — stateless FastAPI inference server
+- src/inference_service/ — stateless FastAPI inference server (client + server)
 - src/grouping/ — clustering + feedback learner
 - src/ui/ — FastAPI UI server
+- scripts/ — benchmarking, profiling, deployment, and analysis tools
+- model_repository/ — Triton model configs (ONNX CUDA EP + TensorRT EP)
+- benchmark_results/ — raw benchmark JSON data from all steps
 
 ## Safety Notes
 

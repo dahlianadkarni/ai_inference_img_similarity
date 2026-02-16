@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Inference Infrastructure — Project Presentation</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 18px; scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    overflow: hidden; height: 100vh; width: 100vw;
+  }
+
+  /* ── Slide Container ── */
+  .deck { position: relative; width: 100vw; height: 100vh; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 4rem 6rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.45s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ── Typography ── */
+  h1 { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem; text-align: center; }
+  h2 { font-size: 2rem; font-weight: 600; margin-bottom: 0.8rem; color: #38bdf8; }
+  h3 { font-size: 1.35rem; font-weight: 600; margin-bottom: 0.5rem; color: #7dd3fc; }
+  p, li { font-size: 1.15rem; line-height: 1.65; }
+  ul { list-style: none; padding: 0; }
+  ul li { padding-left: 1.6em; position: relative; margin-bottom: 0.45em; }
+  ul li::before { content: '▸'; position: absolute; left: 0; color: #38bdf8; font-weight: 700; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.92em; background: #1e293b; padding: 0.15em 0.4em; border-radius: 4px; }
+  .accent { color: #38bdf8; }
+  .green  { color: #4ade80; }
+  .orange { color: #fb923c; }
+  .red    { color: #f87171; }
+  .dim    { color: #94a3b8; }
+  .big    { font-size: 3.2rem; font-weight: 800; }
+  .medium { font-size: 1.8rem; }
+  .small  { font-size: 0.95rem; color: #94a3b8; }
+  .center { text-align: center; }
+  .left   { text-align: left; align-self: stretch; }
+
+  /* ── Layout helpers ── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; width: 100%; align-items: start; }
+  .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; width: 100%; }
+  .gap { margin-top: 1.5rem; }
+  .gap-sm { margin-top: 0.8rem; }
+  .full { width: 100%; }
+
+  /* ── Tables ── */
+  table { border-collapse: collapse; width: 100%; font-size: 1rem; margin-top: 0.6rem; }
+  th { background: #1e293b; color: #38bdf8; padding: 0.6em 0.8em; text-align: left; font-weight: 600; }
+  td { padding: 0.5em 0.8em; border-bottom: 1px solid #1e293b; }
+  tr:hover td { background: rgba(56, 189, 248, 0.06); }
+  .winner { color: #4ade80; font-weight: 700; }
+
+  /* ── Pre/code blocks ── */
+  pre {
+    background: #1e293b; padding: 1.2em 1.5em; border-radius: 8px;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88rem;
+    line-height: 1.55; overflow-x: auto; width: 100%; color: #cbd5e1;
+    border-left: 3px solid #38bdf8;
+  }
+
+  /* ── Diagram boxes ── */
+  .diagram {
+    background: #1e293b; padding: 1.4em 1.8em; border-radius: 10px;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem;
+    line-height: 1.5; white-space: pre; overflow-x: auto; width: 100%;
+    color: #94a3b8;
+  }
+
+  /* ── Metric cards ── */
+  .metric-card {
+    background: #1e293b; border-radius: 12px; padding: 1.5rem;
+    text-align: center; border: 1px solid #334155;
+  }
+  .metric-card .value { font-size: 2.4rem; font-weight: 800; color: #38bdf8; margin: 0.3rem 0; }
+  .metric-card .label { font-size: 0.95rem; color: #94a3b8; }
+  .metric-card.green .value { color: #4ade80; }
+  .metric-card.orange .value { color: #fb923c; }
+  .metric-card.red .value { color: #f87171; }
+
+  /* ── Insight box ── */
+  .insight {
+    background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(56,189,248,0.04));
+    border-left: 4px solid #38bdf8; padding: 1rem 1.4rem; border-radius: 0 8px 8px 0;
+    width: 100%; margin-top: 0.8rem;
+  }
+  .insight.warn {
+    background: linear-gradient(135deg, rgba(251,146,60,0.12), rgba(251,146,60,0.04));
+    border-left-color: #fb923c;
+  }
+
+  /* ── Step badge ── */
+  .badge {
+    display: inline-block; background: #38bdf8; color: #0f172a;
+    font-weight: 700; font-size: 0.85rem; padding: 0.2em 0.7em;
+    border-radius: 6px; margin-bottom: 0.5rem;
+  }
+  .badge.green { background: #4ade80; }
+  .badge.orange { background: #fb923c; }
+
+  /* ── Nav ── */
+  .nav {
+    position: fixed; bottom: 1.5rem; right: 2rem; z-index: 100;
+    display: flex; gap: 0.6rem; align-items: center;
+  }
+  .nav button {
+    background: #1e293b; border: 1px solid #334155; color: #e2e8f0;
+    width: 2.6rem; height: 2.6rem; border-radius: 8px; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .nav button:hover { background: #334155; }
+  .nav .counter { font-size: 0.85rem; color: #64748b; min-width: 3.5rem; text-align: center; }
+
+  /* ── Progress bar ── */
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: #38bdf8; transition: width 0.4s; z-index: 200; }
+
+  /* ── Timeline ── */
+  .timeline { display: flex; flex-direction: column; gap: 0.7rem; width: 100%; }
+  .timeline-item {
+    display: grid; grid-template-columns: 3rem 1fr; gap: 0.8rem; align-items: start;
+  }
+  .timeline-dot {
+    width: 2.2rem; height: 2.2rem; border-radius: 50%; background: #38bdf8;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; color: #0f172a; flex-shrink: 0;
+  }
+  .timeline-dot.done { background: #4ade80; }
+
+  /* ── Bar chart (CSS) ── */
+  .bar-chart { width: 100%; }
+  .bar-row { display: grid; grid-template-columns: 120px 1fr 70px; gap: 0.6rem; align-items: center; margin-bottom: 0.4rem; }
+  .bar-label { font-size: 0.9rem; text-align: right; color: #94a3b8; }
+  .bar-track { height: 1.6rem; background: #1e293b; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .bar-fill.blue { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
+  .bar-fill.green { background: linear-gradient(90deg, #4ade80, #22c55e); }
+  .bar-fill.orange { background: linear-gradient(90deg, #fb923c, #f97316); }
+  .bar-fill.red { background: linear-gradient(90deg, #f87171, #ef4444); }
+  .bar-value { font-size: 0.9rem; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="deck" id="deck">
+
+<!-- ═══════════════════ SLIDE 1: TITLE ═══════════════════ -->
+<section class="slide active" data-slide="0">
+  <p class="small" style="margin-bottom: 0.3rem;">Project Presentation</p>
+  <h1>ML Inference Infrastructure<br><span class="accent">From Monolith to Multi-GPU</span></h1>
+  <p class="dim gap" style="font-size:1.1rem;">A hands-on exploration of production inference patterns using<br>
+    OpenCLIP ViT-B/32 &amp; NVIDIA Triton Inference Server</p>
+  <div class="cols-3 gap" style="max-width: 640px;">
+    <div class="metric-card"><div class="label">Steps</div><div class="value">6</div></div>
+    <div class="metric-card"><div class="label">Backends</div><div class="value">3</div></div>
+    <div class="metric-card"><div class="label">GPUs Tested</div><div class="value">4</div></div>
+  </div>
+  <p class="small gap">Use <kbd>←</kbd> <kbd>→</kbd> arrow keys to navigate &nbsp;|&nbsp; <kbd>Esc</kbd> overview</p>
+</section>
+
+<!-- ═══════════════════ SLIDE 2: THE APP ═══════════════════ -->
+<section class="slide" data-slide="1">
+  <h2>The Application: Photo Near-Duplicate Detection</h2>
+  <div class="cols gap">
+    <div>
+      <h3>What It Does</h3>
+      <ul>
+        <li>Scans Apple Photos library (AppleScript integration)</li>
+        <li>Three duplicate detection levels:<br>
+          <span class="dim">MD5 hashing → perceptual dHash → AI embeddings</span></li>
+        <li>Web UI for review, comparison, and batch deletion</li>
+        <li>Feedback loop: teach the AI what's "not similar"</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Pipeline Bottleneck</h3>
+      <table>
+        <tr><th>Stage</th><th>Time</th><th>Bound By</th></tr>
+        <tr><td>1. Scan</td><td>1–5 min</td><td>I/O</td></tr>
+        <tr><td class="accent"><b>2. Embed</b></td><td class="accent"><b>10–30s</b></td><td class="accent"><b>GPU ⚡</b></td></tr>
+        <tr><td>3. Group</td><td>&lt;1s</td><td>CPU</td></tr>
+        <tr><td>4. UI</td><td>Instant</td><td>Memory</td></tr>
+      </table>
+      <div class="insight gap-sm">
+        <strong>The embedding stage is the compute bottleneck</strong> — and the focus of this entire infrastructure exploration.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 3: THE MODEL ═══════════════════ -->
+<section class="slide" data-slide="2">
+  <h2>The Model: OpenCLIP ViT-B/32</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Specifications</h3>
+      <table>
+        <tr><td>Architecture</td><td>Vision Transformer (ViT-B/32)</td></tr>
+        <tr><td>Training Data</td><td>LAION-2B</td></tr>
+        <tr><td>Input</td><td>224 × 224 × 3 RGB</td></tr>
+        <tr><td>Output</td><td>512-dim float32 embedding</td></tr>
+        <tr><td>Model Size</td><td>335 MB (ONNX)</td></tr>
+        <tr><td>ONNX Nodes</td><td>2,272 ops</td></tr>
+        <tr><td>VRAM Usage</td><td>~1 GB per instance</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Compute Profile</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">MatMul</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:75.7%"></div></div>
+          <div class="bar-value accent">75.7%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Gemm</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:7.1%"></div></div>
+          <div class="bar-value">7.1%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">BiasGelu</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:3.9%"></div></div>
+          <div class="bar-value">3.9%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Conv</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:3.7%"></div></div>
+          <div class="bar-value">3.7%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Other</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:9.6%"></div></div>
+          <div class="bar-value dim">9.6%</div>
+        </div>
+      </div>
+      <div class="insight gap-sm">MatMul dominates — expected for transformers. No CPU fallback ops.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 4: THE JOURNEY ═══════════════════ -->
+<section class="slide" data-slide="3">
+  <h2>The Learning Journey: 6 Steps</h2>
+  <div class="timeline gap full left">
+    <div class="timeline-item">
+      <div class="timeline-dot done">1</div>
+      <div><strong>Client–Service Split</strong><br><span class="dim">Separate UI from inference. Stateless HTTP API. Three modes: local / remote / auto.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">2</div>
+      <div><strong>Docker Containerization</strong><br><span class="dim">Dockerfile for inference service. Health checks. Non-root user. Separate ML requirements.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">3</div>
+      <div><strong>Cloud GPU Deployment</strong><br><span class="dim">NVIDIA Container Toolkit. Vast.ai. Cross-platform build (ARM → x86). CUDA-enabled base.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">4</div>
+      <div><strong>NVIDIA Triton Inference Server</strong><br><span class="dim">ONNX export. Dynamic batching. gRPC + HTTP. Prometheus metrics. Model repository.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">5</div>
+      <div><strong>Optimization (ONNX + TensorRT)</strong><br><span class="dim">Binary protocol fix (1000× speedup). ONNX profiling. TensorRT EP with FP16 (6.6× GPU speedup).</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">6</div>
+      <div><strong>Comparison &amp; Multi-GPU Scaling</strong><br><span class="dim">3-way backend comparison on A100 + RTX 4080. 4× GPU scaling study. Cost analysis.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 5: STEP 1 — ARCHITECTURE ═══════════════════ -->
+<section class="slide" data-slide="4">
+  <span class="badge">Step 1</span>
+  <h2>Client–Service Split</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Before: Monolith</h3>
+      <div class="diagram" style="font-size:0.78rem;">┌──────────────────────────┐
+│     Monolithic App        │
+│                            │
+│  Scan → Load Model → Embed │
+│  → Group → Display UI      │
+│                            │
+│  (everything in 1 process) │
+└──────────────────────────┘</div>
+    </div>
+    <div>
+      <h3>After: Separated</h3>
+      <div class="diagram" style="font-size:0.78rem;">┌──────────────┐    ┌───────────────┐
+│ Client / UI  │    │ Inference Svc │
+│ (Port 8000)  │───▶│ (Port 8002)   │
+│              │HTTP│               │
+│ Scan, Group, │    │ POST /embed   │
+│ Display      │    │ GET /healthz  │
+│              │    │               │
+│ 3 modes:     │    │ Stateless     │
+│ local/remote │    │ Configurable  │
+│ /auto        │    │ (env vars)    │
+└──────────────┘    └───────────────┘</div>
+    </div>
+  </div>
+  <div class="insight gap">
+    <strong>Key principle:</strong> The inference service is stateless — each request is independent.
+    This enables independent deployment, scaling, and backend swapping.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 6: STEPS 2–3 ═══════════════════ -->
+<section class="slide" data-slide="5">
+  <span class="badge">Steps 2–3</span>
+  <h2>Containerization → Cloud GPU</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Docker (Step 2)</h3>
+      <ul>
+        <li>Separate <code>requirements-ml.txt</code> (lean container)</li>
+        <li>Built-in <code>HEALTHCHECK</code></li>
+        <li>Non-root user (security)</li>
+        <li>Model loads on startup, not per-request</li>
+      </ul>
+      <h3 class="gap">GPU Deployment (Step 3)</h3>
+      <ul>
+        <li>NVIDIA Container Toolkit</li>
+        <li><code>docker buildx --platform linux/amd64</code></li>
+        <li>Vast.ai for GPU instances</li>
+        <li>Same code, CPU → GPU transparently</li>
+      </ul>
+    </div>
+    <div>
+      <div class="diagram" style="font-size:0.75rem;">┌─ macOS (local) ────────┐
+│                        │
+│  Client / UI App       │
+│  (python -m src.ui)    │
+│           │            │
+└───────────┼────────────┘
+            │ HTTP
+            ▼
+┌─ Vast.ai Cloud GPU ───┐
+│  ┌──────────────────┐  │
+│  │ Docker Container  │  │
+│  │                   │  │
+│  │ Inference Service │  │
+│  │ PyTorch + CUDA    │  │
+│  │ Port 8002         │  │
+│  └──────────────────┘  │
+│                        │
+│  GPU: A4000 / A100     │
+│  NVIDIA Runtime        │
+└────────────────────────┘</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 7: STEP 4 — TRITON ═══════════════════ -->
+<section class="slide" data-slide="6">
+  <span class="badge">Step 4</span>
+  <h2>NVIDIA Triton Inference Server</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Why Triton?</h3>
+      <table>
+        <tr><th>Feature</th><th>FastAPI</th><th>Triton</th></tr>
+        <tr><td>Dynamic batching</td><td class="red">✗</td><td class="green">✓</td></tr>
+        <tr><td>Multi-model serving</td><td class="red">✗</td><td class="green">✓</td></tr>
+        <tr><td>gRPC support</td><td class="red">✗</td><td class="green">✓</td></tr>
+        <tr><td>Prometheus metrics</td><td class="red">✗</td><td class="green">✓</td></tr>
+        <tr><td>Model versioning</td><td class="red">✗</td><td class="green">✓</td></tr>
+        <tr><td>Multiple backends</td><td class="red">✗</td><td class="green">✓</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>What I Did</h3>
+      <ul>
+        <li>Exported model to ONNX format</li>
+        <li>Created Triton model repository structure</li>
+        <li>Configured dynamic batching (queue delay tuning)</li>
+        <li>Built Docker image on <code>nvcr.io/nvidia/tritonserver:24.01-py3</code></li>
+        <li>Updated client for both backends</li>
+      </ul>
+      <div class="insight warn gap-sm">
+        <strong>Initial result was disappointing:</strong> Triton batch-32 took 9.6s vs PyTorch 1.7s (5.6× slower). This triggered the investigation in Step 5A…
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 8: STEP 5A — THE DISCOVERY ═══════════════════ -->
+<section class="slide" data-slide="7">
+  <span class="badge orange">Step 5A — The Discovery</span>
+  <h2>Finding the 1,000× Serialization Bottleneck</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Root Cause: JSON Serialization</h3>
+      <p class="dim">Sending tensors as JSON <code>.tolist()</code> serialized <strong>4.8 million floats</strong> as text per batch-32 request.</p>
+      <table class="gap-sm">
+        <tr><th>Batch</th><th>JSON</th><th>Binary</th><th>Ratio</th></tr>
+        <tr><td>1</td><td>52.5ms</td><td>0.01ms</td><td class="red"><b>4,799×</b></td></tr>
+        <tr><td>8</td><td>428ms</td><td>0.26ms</td><td class="red"><b>1,642×</b></td></tr>
+        <tr><td>32</td><td>1,842ms</td><td>1.74ms</td><td class="red"><b>1,058×</b></td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Payload Size Impact</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">JSON</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+          <div class="bar-value red">95 MB</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Binary</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:19.7%"></div></div>
+          <div class="bar-value orange">18 MB</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">base64 JPEG</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:0.33%"></div></div>
+          <div class="bar-value green">0.3 MB</div>
+        </div>
+      </div>
+      <p class="dim small gap-sm">(Per batch-32 request payload)</p>
+      <div class="insight gap-sm">
+        <strong>Lesson:</strong> Always measure before optimizing. The "slow Triton" was actually slow JSON serialization on the client side.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 9: STEP 5A — RESULTS ═══════════════════ -->
+<section class="slide" data-slide="8">
+  <span class="badge green">Step 5A — Results</span>
+  <h2>After Binary Protocol Fix</h2>
+  <div class="cols-3 gap">
+    <div class="metric-card green">
+      <div class="label">Concurrent Throughput</div>
+      <div class="value">4.1×</div>
+      <div class="small">8.7 → 35.8 req/s</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Single-Image Latency</div>
+      <div class="value">2.5×</div>
+      <div class="small">564ms → 229ms</div>
+    </div>
+    <div class="metric-card orange">
+      <div class="label">Batch-32 Latency</div>
+      <div class="value">1.7×</div>
+      <div class="small">9,649ms → 5,614ms</div>
+    </div>
+  </div>
+  <div class="full gap">
+    <div class="insight">
+      <strong>Remaining gap:</strong> Even with binary protocol, ONNX Runtime was still <span class="orange">5.2× slower</span> than native PyTorch for batch-32. This isn't a config issue — it's inherent ONNX RT vs PyTorch GPU performance. Can TensorRT close the gap? → Step 5B
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 10: STEP 5B — TENSORRT ═══════════════════ -->
+<section class="slide" data-slide="9">
+  <span class="badge">Step 5B</span>
+  <h2>TensorRT Execution Provider (FP16)</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Why TensorRT?</h3>
+      <ul>
+        <li><strong>Kernel fusion:</strong> Combines multiple ops into single CUDA kernels</li>
+        <li><strong>FP16 precision:</strong> Halves memory bandwidth (safe for embeddings)</li>
+        <li><strong>Architecture-specific:</strong> Auto-tunes for the target GPU</li>
+      </ul>
+      <h3 class="gap">Approach: TRT Execution Provider</h3>
+      <p class="dim">Same ONNX model file (symlinked), different execution provider in <code>config.pbtxt</code>. No separate conversion step.</p>
+    </div>
+    <div>
+      <h3>Server-Side GPU Compute (RTX A4000)</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">ONNX CUDA EP</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:100%"></div></div>
+          <div class="bar-value orange">31.1ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TensorRT EP</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:15.1%"></div></div>
+          <div class="bar-value winner">4.7ms</div>
+        </div>
+      </div>
+      <div class="metric-card green gap">
+        <div class="label">GPU Compute Speedup</div>
+        <div class="value">6.6×</div>
+        <div class="small">TRT EP FP16 vs ONNX CUDA EP FP32</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 11: STEP 6A — 3-WAY COMPARISON ═══════════════════ -->
+<section class="slide" data-slide="10">
+  <span class="badge">Step 6A</span>
+  <h2>3-Way Backend Comparison — A100 SXM4 80GB</h2>
+  <p class="dim">All 3 backends deployed on the same GPU instance for apples-to-apples comparison.</p>
+  <table class="gap">
+    <tr><th>Metric</th><th>PyTorch FastAPI</th><th>Triton ONNX</th><th>Triton TRT EP</th></tr>
+    <tr>
+      <td>Client latency (single)</td>
+      <td class="winner">56.9ms ⚡</td><td>182.9ms</td><td>212.5ms</td>
+    </tr>
+    <tr>
+      <td>Server GPU compute</td>
+      <td>~10–15ms (est.)</td><td class="winner">4.4ms ⚡</td><td>29.1ms</td>
+    </tr>
+    <tr>
+      <td>Batch-32 throughput</td>
+      <td class="winner">64.3 img/s ⚡</td><td>32.3 img/s</td><td>timeout</td>
+    </tr>
+    <tr>
+      <td>VRAM usage</td>
+      <td>~1 GB</td><td>~0.9 GB</td><td>~1 GB</td>
+    </tr>
+  </table>
+  <div class="insight gap">
+    <strong>Key insight:</strong> Triton's GPU compute is <span class="green">12.8× faster</span> (4.4ms vs ~56ms) — but PyTorch wins client-side because it accepts 10KB JPEG images vs Triton's 602KB tensor payload. <em>Network overhead dominates.</em>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 12: WHERE DOES THE TIME GO? ═══════════════════ -->
+<section class="slide" data-slide="11">
+  <h2>Where Does the Time Go?</h2>
+  <p class="dim center">Latency breakdown for a single Triton ONNX request on A100 (182.9ms total)</p>
+  <div class="cols gap">
+    <div>
+      <h3>Triton ONNX (182.9ms)</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">Network</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:91.7%"></div></div>
+          <div class="bar-value red">91.7%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Server overhead</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:5.8%"></div></div>
+          <div class="bar-value">5.8%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">GPU compute</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:2.4%"></div></div>
+          <div class="bar-value green">2.4%</div>
+        </div>
+      </div>
+      <p class="dim small gap-sm">602 KB tensor payload per image</p>
+    </div>
+    <div>
+      <h3>PyTorch (56.9ms)</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">Network</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:56%"></div></div>
+          <div class="bar-value">~56%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Preprocessing</div>
+          <div class="bar-track"><div class="bar-fill blue" style="width:18%"></div></div>
+          <div class="bar-value">~18%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">GPU compute</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:26%"></div></div>
+          <div class="bar-value green">~26%</div>
+        </div>
+      </div>
+      <p class="dim small gap-sm">~10 KB base64 JPEG per image</p>
+    </div>
+  </div>
+  <div class="insight gap">
+    <strong>Protocol design matters more than compute optimization.</strong> The 60× payload difference (602KB vs 10KB) determines which backend "wins" for remote clients.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 13: GPU ARCHITECTURE MATTERS ═══════════════════ -->
+<section class="slide" data-slide="12">
+  <h2>GPU Architecture Changes the Winner</h2>
+  <p class="dim center">Same model, same code — opposite results depending on GPU hardware.</p>
+  <div class="cols gap">
+    <div>
+      <h3>A100 SXM4 (Datacenter)</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">ONNX CUDA EP</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:15.2%"></div></div>
+          <div class="bar-value winner">4.4ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TensorRT EP</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+          <div class="bar-value red">29.1ms</div>
+        </div>
+      </div>
+      <p class="dim small">ONNX wins by 6.5× — A100 Tensor Cores excel with generic ops</p>
+    </div>
+    <div>
+      <h3>RTX 4080 (Consumer)</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">TensorRT EP</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:35.1%"></div></div>
+          <div class="bar-value winner">2.0ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">ONNX CUDA EP</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:100%"></div></div>
+          <div class="bar-value orange">5.7ms</div>
+        </div>
+      </div>
+      <p class="dim small">TRT wins by 2.9× — kernel fusion benefits consumer arch more</p>
+    </div>
+  </div>
+  <div class="insight gap">
+    <strong>Takeaway:</strong> There's no universally "best" backend. Performance depends on GPU architecture, and real benchmarking is needed for each deployment target.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 14: STEP 6B — MULTI-GPU ═══════════════════ -->
+<section class="slide" data-slide="13">
+  <span class="badge">Step 6B</span>
+  <h2>Multi-GPU Scaling Study — 4× RTX 4080</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Throughput vs Concurrency</h3>
+      <table>
+        <tr><th>Concurrency</th><th>Throughput</th><th>Latency p50</th></tr>
+        <tr><td>1</td><td>3.4 img/s</td><td>268ms</td></tr>
+        <tr><td>8</td><td>20.2 img/s</td><td>255ms</td></tr>
+        <tr><td>16</td><td>31.9 img/s</td><td>303ms</td></tr>
+        <tr><td class="green"><b>32</b></td><td class="green"><b>43.2 img/s ⭐</b></td><td>416ms</td></tr>
+        <tr><td class="red">64</td><td class="red">37.4 img/s</td><td class="red">1,000ms</td></tr>
+        <tr><td class="red">128</td><td class="red">37.1 img/s</td><td class="red">1,638ms</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Scaling Efficiency</h3>
+      <div class="cols-3 gap-sm" style="grid-template-columns: 1fr 1fr;">
+        <div class="metric-card orange">
+          <div class="label">Scaling Factor</div>
+          <div class="value">1.8×</div>
+          <div class="small">Expected: 4× (ideal)</div>
+        </div>
+        <div class="metric-card red">
+          <div class="label">Efficiency</div>
+          <div class="value">45%</div>
+          <div class="small">Cost: 2.2× more per image</div>
+        </div>
+      </div>
+      <div class="insight warn gap">
+        <strong>Network is the bottleneck, not GPU.</strong><br>
+        GPU compute: 8.4ms (3% of time)<br>
+        Network overhead: 300ms+ (97% of time)<br>
+        Adding GPUs doesn't help when the network is saturated.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 15: COST ANALYSIS ═══════════════════ -->
+<section class="slide" data-slide="14">
+  <h2>Cost-Efficiency Analysis</h2>
+  <div class="cols gap">
+    <div>
+      <table>
+        <tr><th>Config</th><th>Throughput</th><th>Cost/hr</th><th>Cost per 1K imgs</th></tr>
+        <tr>
+          <td>1× RTX 4080</td><td>24.3 img/s</td><td>$2.00</td><td>$0.023</td>
+        </tr>
+        <tr>
+          <td class="red">4× RTX 4080</td><td>43.2 img/s</td><td class="red">$8.00</td><td class="red">$0.051</td>
+        </tr>
+        <tr>
+          <td class="green">1× A100</td><td class="green">64.3 img/s</td><td>$1.50</td><td class="green">$0.006</td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <h3>Relative Cost per Image</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">4× RTX 4080</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+          <div class="bar-value red">$0.051</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">1× RTX 4080</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:45.1%"></div></div>
+          <div class="bar-value orange">$0.023</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">1× A100</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:11.8%"></div></div>
+          <div class="bar-value winner">$0.006</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="insight gap">
+    <strong>1× A100 is 3.5× more cost-efficient than 1× RTX 4080</strong> and <strong>8.5× more than 4× RTX 4080</strong> — validating that horizontal single-GPU scaling beats vertical multi-GPU for network-bound workloads.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 16: TOP 5 FINDINGS ═══════════════════ -->
+<section class="slide" data-slide="15">
+  <h2>Top 5 Findings</h2>
+  <div class="left full gap" style="max-width: 900px;">
+    <div style="margin-bottom:1rem;">
+      <h3>1. Serialization Can Be the Real Bottleneck</h3>
+      <p class="dim">JSON <code>.tolist()</code> was <strong>1,000–4,800×</strong> slower than binary encoding. The "slow Triton" was actually slow JSON.</p>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <h3>2. Backend Performance Depends on GPU Architecture</h3>
+      <p class="dim">Consumer GPUs (RTX 4080): TensorRT wins. Datacenter GPUs (A100): ONNX wins. Same model, opposite results.</p>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <h3>3. Network Overhead Dominates Remote Inference</h3>
+      <p class="dim">Triton achieves 4.4ms GPU compute but 183ms client-side — 602KB tensor transfer is 40× longer than inference.</p>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <h3>4. Multi-GPU Scaling Is Not Free</h3>
+      <p class="dim">4× GPUs → only 1.8× throughput (45% efficiency) at 2.2× cost per image.</p>
+    </div>
+    <div>
+      <h3>5. Protocol Design > Compute Optimization</h3>
+      <p class="dim">PyTorch (57ms) beats Triton (183ms) remotely despite Triton being 12.8× faster at GPU compute — because of efficient JPEG input.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 17: TECHNOLOGIES ═══════════════════ -->
+<section class="slide" data-slide="16">
+  <h2>Technologies &amp; Skills</h2>
+  <div class="cols-3 gap">
+    <div>
+      <h3>ML Serving</h3>
+      <ul>
+        <li>PyTorch</li>
+        <li>ONNX Runtime</li>
+        <li>TensorRT (EP)</li>
+        <li>NVIDIA Triton</li>
+        <li>OpenCLIP / ViT</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Infrastructure</h3>
+      <ul>
+        <li>Docker (multi-stage, buildx)</li>
+        <li>NVIDIA Container Toolkit</li>
+        <li>Docker Compose</li>
+        <li>Cloud GPU (Vast.ai)</li>
+        <li>Multi-GPU orchestration</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Engineering</h3>
+      <ul>
+        <li>FastAPI / REST / gRPC</li>
+        <li>Binary protocols</li>
+        <li>Prometheus metrics</li>
+        <li>Performance profiling</li>
+        <li>Controlled benchmarking</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cols-3 gap" style="max-width:700px;">
+    <div class="metric-card"><div class="value">6</div><div class="label">Infra Steps</div></div>
+    <div class="metric-card"><div class="value">12+</div><div class="label">Technical Docs</div></div>
+    <div class="metric-card"><div class="value">1000+</div><div class="label">Benchmark Data Points</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 18: THANK YOU ═══════════════════ -->
+<section class="slide" data-slide="17">
+  <h1>Thank You</h1>
+  <p class="medium dim gap-sm">Questions?</p>
+  <div class="gap" style="max-width: 700px;">
+    <table>
+      <tr><th>Resource</th><th>Details</th></tr>
+      <tr><td>Source code</td><td>Full repo with all scripts, Dockerfiles, and benchmarks</td></tr>
+      <tr><td>Documentation</td><td>12+ detailed markdown docs covering every step</td></tr>
+      <tr><td>Benchmark data</td><td>Raw JSON results for all experiments</td></tr>
+      <tr><td>Docker images</td><td>Published to Docker Hub, ready to deploy</td></tr>
+    </table>
+  </div>
+  <p class="dim small gap">Built with Python, FastAPI, PyTorch, ONNX Runtime, TensorRT, NVIDIA Triton, Docker</p>
+</section>
+
+</div><!-- /deck -->
+
+<!-- ── Navigation ── -->
+<div class="nav">
+  <button id="prev" aria-label="Previous slide">←</button>
+  <span class="counter" id="counter">1 / 18</span>
+  <button id="next" aria-label="Next slide">→</button>
+</div>
+
+<script>
+(function(){
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let cur = 0;
+
+  function go(n) {
+    if (n < 0 || n >= total) return;
+    slides[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur+1) + ' / ' + total;
+    document.getElementById('progress').style.width = ((cur+1)/total*100) + '%';
+  }
+
+  document.getElementById('prev').addEventListener('click', () => go(cur-1));
+  document.getElementById('next').addEventListener('click', () => go(cur+1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ')  { e.preventDefault(); go(cur+1); }
+    if (e.key === 'ArrowLeft')                     { e.preventDefault(); go(cur-1); }
+    if (e.key === 'Home')                          { e.preventDefault(); go(0); }
+    if (e.key === 'End')                           { e.preventDefault(); go(total-1); }
+  });
+
+  // Touch support
+  let touchX = 0;
+  document.addEventListener('touchstart', e => { touchX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].screenX - touchX;
+    if (Math.abs(diff) > 50) { diff < 0 ? go(cur+1) : go(cur-1); }
+  });
+
+  go(0);
+})();
+</script>
+</body>
+</html>
