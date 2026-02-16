@@ -1,0 +1,72 @@
+# =============================================================================
+# OpenCLIP ViT-B-32 — Triton Model Configuration (4x GPU)
+# =============================================================================
+#
+# Multi-GPU Configuration: 4 instances across 4 GPUs
+#
+# USAGE:
+#   Copy this file over config.pbtxt in the model repository before starting Triton:
+#     cp model_repository/openclip_vit_b32/config.multigpu.4x.pbtxt \
+#        model_repository/openclip_vit_b32/config.pbtxt
+#
+#   Then start Triton with access to all GPUs:
+#     docker run --gpus all -v $PWD/model_repository:/models ...
+#
+# INSTANCE GROUP STRATEGY:
+#   count: 4 (without specific gpus) → Triton auto-assigns across available GPUs
+#   This creates 4 model instances distributed round-robin across GPUs 0-3
+#
+# EXPECTED THROUGHPUT:
+#   ~700-900 images/sec at concurrency 64-128 (3.5-4x single-GPU baseline)
+#
+# MEMORY NOTE:
+#   Each instance loads model into VRAM (~1.5GB per instance)
+#   Total VRAM per GPU: ~1.5GB + batch memory
+#   Safe for GPUs with ≥8GB VRAM
+#
+# =============================================================================
+
+name: "openclip_vit_b32"
+platform: "onnxruntime_onnx"
+max_batch_size: 32
+
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP32
+    dims: [ 3, 224, 224 ]
+  }
+]
+
+output [
+  {
+    name: "embedding"
+    data_type: TYPE_FP32
+    dims: [ 512 ]
+  }
+]
+
+# Dynamic batching configuration
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 10000
+}
+
+# Multi-GPU instance group: 4 instances
+instance_group [
+  {
+    count: 4
+    kind: KIND_GPU
+    # No specific GPUs listed → Triton distributes across all available
+  }
+]
+
+# Version policy
+version_policy: { specific { versions: 1 }}
+
+# CUDA graph optimization
+optimization {
+  cuda {
+    graphs: true
+  }
+}

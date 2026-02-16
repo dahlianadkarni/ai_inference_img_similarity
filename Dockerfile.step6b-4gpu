@@ -1,0 +1,71 @@
+# =============================================================================
+# Step 6B: 4x GPU Multi-GPU Triton Docker Image
+# =============================================================================
+#
+# This Docker image is pre-configured for 4x GPU multi-GPU scaling tests.
+# It includes config.pbtxt with instance_group count: 4 already set.
+#
+# Build:
+#   docker buildx build --platform linux/amd64 \
+#     -f Dockerfile.step6b-4gpu \
+#     -t dahlianadkarni/photo-duplicate-step6b-4gpu:latest \
+#     --push .
+#
+# Run on Vast.ai (4x GPU instance):
+#   docker run -d --gpus all --shm-size=2g \
+#     -p 8000:8000 -p 8001:8001 -p 8002:8002 \
+#     --name triton-4gpu \
+#     dahlianadkarni/photo-duplicate-step6b-4gpu:latest
+#
+# Benchmark from your Mac:
+#   python scripts/benchmark_multigpu.py \
+#     --triton-url http://<INSTANCE_IP>:8000 \
+#     --config-name "4-gpu-rtx4080" \
+#     --gpu-name rtx4080 \
+#     --concurrency 1,4,8,16,32,64,128 \
+#     --iterations 100
+#
+# =============================================================================
+
+FROM nvcr.io/nvidia/tritonserver:24.01-py3
+
+# Set working directory
+WORKDIR /workspace
+
+# =============================================================================
+# Copy Model Repository with 4x GPU Config
+# =============================================================================
+
+# Copy only the ONNX model (not TRT which causes loading issues)
+COPY model_repository/openclip_vit_b32/ /models-base/openclip_vit_b32/
+
+# Copy the 4x GPU config as the default config.pbtxt
+COPY model_repository/openclip_vit_b32/config.multigpu.4x.pbtxt \
+     /models-base/openclip_vit_b32/config.pbtxt
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+
+ENV PYTHONUNBUFFERED=1
+
+# =============================================================================
+# Expose Ports
+# =============================================================================
+
+# Triton HTTP, gRPC, Metrics
+EXPOSE 8000 8001 8002
+
+# =============================================================================
+# Health Check
+# =============================================================================
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:8000/v2/health/ready || exit 1
+
+# =============================================================================
+# Entrypoint
+# =============================================================================
+
+# Start Triton with the pre-configured model repository
+CMD ["tritonserver", "--model-repository=/models-base"]

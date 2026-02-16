@@ -1,0 +1,64 @@
+{
+  "config": {
+    "host": "207.180.148.74",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "iterations": 30,
+    "batch_sizes": [1, 4, 8, 16, 32],
+    "timestamp": "2026-02-15 16:11:41",
+    "notes": "Remote benchmark from Mac (~20-30ms network RTT). TRT EP batch 8+ timed out due to per-batch-size engine recompilation."
+  },
+  "backends": {
+    "pytorch_fastapi": {
+      "single_image": {
+        "mean_ms": 56.9,
+        "median_ms": 55.8,
+        "p95_ms": 68.9,
+        "p99_ms": 72.3,
+        "count": 30
+      },
+      "batch": {
+        "batch_1":  { "mean_ms": 57.1,   "throughput_imgs_sec": 17.5 },
+        "batch_4":  { "mean_ms": 134.2,  "throughput_imgs_sec": 29.8 },
+        "batch_8":  { "mean_ms": 201.7,  "throughput_imgs_sec": 39.7 },
+        "batch_16": { "mean_ms": 308.0,  "throughput_imgs_sec": 52.0 },
+        "batch_32": { "mean_ms": 497.6,  "throughput_imgs_sec": 64.3 }
+      }
+    },
+    "triton_onnx_cuda_ep": {
+      "single_image": {
+        "mean_ms": 182.87,
+        "median_ms": 180.2,
+        "p95_ms": 199.41,
+        "p99_ms": 210.5,
+        "server_gpu_compute_ms": 4.446,
+        "server_total_request_ms": 15.097,
+        "count": 30
+      },
+      "batch": {
+        "batch_1":  { "mean_ms": 206.2,  "throughput_imgs_sec": 4.8 },
+        "batch_4":  { "mean_ms": 220.6,  "throughput_imgs_sec": 18.1 },
+        "batch_8":  { "mean_ms": 292.7,  "throughput_imgs_sec": 27.3 },
+        "batch_16": { "mean_ms": 517.3,  "throughput_imgs_sec": 30.9 },
+        "batch_32": { "mean_ms": 990.7,  "throughput_imgs_sec": 32.3 }
+      }
+    },
+    "triton_trt_ep": {
+      "single_image": {
+        "mean_ms": 212.46,
+        "median_ms": 200.3,
+        "p95_ms": 324.9,
+        "p99_ms": 350.2,
+        "server_gpu_compute_ms": 29.1,
+        "server_total_request_ms": 39.656,
+        "count": 30
+      },
+      "batch": {
+        "batch_1": { "mean_ms": 199.8, "throughput_imgs_sec": 5.0 },
+        "batch_4": { "mean_ms": 392.4, "throughput_imgs_sec": 10.2 },
+        "batch_8": { "note": "Timed out - TRT engine recompilation per batch size" },
+        "batch_16": { "note": "Not tested - blocked by batch_8 recompilation" },
+        "batch_32": { "note": "Not tested - blocked by batch_8 recompilation" }
+      }
+    }
+  }
+}

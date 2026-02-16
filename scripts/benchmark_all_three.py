@@ -54,6 +54,50 @@ except ImportError:
 
 BATCH_SIZES = [1, 4, 8, 16, 32]
 CONCURRENT_REQUESTS = 16
+REQUEST_TIMEOUT = 120  # seconds per inference request
+WARMUP_TIMEOUT = 300   # seconds for warmup (TRT engine compilation)
+
+
+def triton_infer_http(host: str, port: int, model_name: str,
+                     input_tensor: np.ndarray, timeout: int = REQUEST_TIMEOUT) -> np.ndarray:
+    """Send inference to Triton via raw HTTP with explicit timeout.
+    
+    Fallback for tritonclient which has no timeout parameter and can hang
+    indefinitely (e.g., during TRT engine compilation per batch size).
+    """
+    url = f"http://{host}:{port}/v2/models/{model_name}/infer"
+    batch_size = input_tensor.shape[0]
+    input_data = input_tensor.tobytes()
+    
+    payload = {
+        "inputs": [{
+            "name": "image",
+            "shape": list(input_tensor.shape),
+            "datatype": "FP32",
+            "parameters": {"binary_data_size": len(input_data)}
+        }],
+        "outputs": [{"name": "embedding", "parameters": {"binary_data": True}}]
+    }
+    
+    json_bytes = json.dumps(payload).encode()
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Inference-Header-Content-Length": str(len(json_bytes)),
+    }
+    body = json_bytes + input_data
+    
+    response = requests.post(url, data=body, headers=headers, timeout=timeout)
+    if response.status_code != 200:
+        raise Exception(f"Triton error {response.status_code}: {response.text[:200]}")
+    
+    header_length = int(response.headers.get("Inference-Header-Content-Length", 0))
+    if header_length > 0:
+        binary_data = response.content[header_length:]
+        return np.frombuffer(binary_data, dtype=np.float32).reshape(batch_size, 512)
+    else:
+        json_response = response.json()
+        output_data = json_response["outputs"][0]["data"]
+        return np.array(output_data, dtype=np.float32).reshape(batch_size, 512)
 
 
 # =============================================================================
@@ -211,31 +255,26 @@ def benchmark_pytorch_batch(host: str, port: int, batch_sizes: List[int]) -> Dic
 
 def benchmark_triton_single(host: str, http_port: int, metrics_port: int, 
                             model_name: str, label: str, iterations: int) -> Dict:
-    """Benchmark Triton backend with single images and collect server metrics."""
+    """Benchmark Triton backend with single images and collect server metrics.
+    
+    Uses raw HTTP with explicit timeout to avoid tritonclient hanging
+    (e.g., during TRT engine compilation).
+    """
     print(f"\n{'='*60}")
     print(f"{label} - Single Image")
     print(f"{'='*60}")
     
-    if not TRITONCLIENT_AVAILABLE:
-        return {"error": "tritonclient not available"}
-    
-    url = f"{host}:{http_port}"
     metrics_url = f"http://{host}:{metrics_port}/metrics"
     
-    try:
-        client = httpclient.InferenceServerClient(url=url)
-    except Exception as e:
-        return {"error": f"Failed to connect: {e}"}
-    
-    # Warmup
-    print("Warming up...")
-    img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-    inp = [httpclient.InferInput("image", img.shape, "FP32")]
-    inp[0].set_data_from_numpy(img)
-    out = [httpclient.InferRequestedOutput("embedding")]
-    
+    # Warmup (long timeout for TRT engine compilation)
+    print("Warming up (TRT may take 2-5 min to compile engine)...")
     for _ in range(3):
-        client.infer(model_name, inp, outputs=out)
+        try:
+            img = np.random.rand(1, 3, 224, 224).astype(np.float32)
+            triton_infer_http(host, http_port, model_name, img, timeout=WARMUP_TIMEOUT)
+        except Exception as e:
+            print(f"  Warmup error: {e}")
+            time.sleep(2)
     
     # Get initial metrics
     try:
@@ -251,13 +290,10 @@ def benchmark_triton_single(host: str, http_port: int, metrics_port: int,
     
     for i in range(iterations):
         img = np.random.rand(1, 3, 224, 224).astype(np.float32)
-        inp = [httpclient.InferInput("image", img.shape, "FP32")]
-        inp[0].set_data_from_numpy(img)
-        out = [httpclient.InferRequestedOutput("embedding")]
         
         start = time.time()
         try:
-            result = client.infer(model_name, inp, outputs=out)
+            triton_infer_http(host, http_port, model_name, img, timeout=REQUEST_TIMEOUT)
             elapsed_ms = (time.time() - start) * 1000
             latencies.append(elapsed_ms)
         except Exception as e:
@@ -313,41 +349,37 @@ def benchmark_triton_single(host: str, http_port: int, metrics_port: int,
 
 def benchmark_triton_batch(host: str, http_port: int, model_name: str, 
                            label: str, batch_sizes: List[int]) -> Dict:
-    """Benchmark Triton backend with different batch sizes."""
+    """Benchmark Triton backend with different batch sizes.
+    
+    Uses raw HTTP with explicit timeout to avoid tritonclient hanging
+    (e.g., TRT engine recompilation per batch size).
+    """
     print(f"\n{'='*60}")
     print(f"{label} - Batch Processing")
     print(f"{'='*60}")
-    
-    if not TRITONCLIENT_AVAILABLE:
-        return {"error": "tritonclient not available"}
-    
-    url = f"{host}:{http_port}"
-    
-    try:
-        client = httpclient.InferenceServerClient(url=url)
-    except Exception as e:
-        return {"error": f"Failed to connect: {e}"}
     
     results = {}
     
     for batch_size in batch_sizes:
         print(f"\nBatch size: {batch_size}")
         
-        # Create batch
         img = np.random.rand(batch_size, 3, 224, 224).astype(np.float32)
-        inp = [httpclient.InferInput("image", img.shape, "FP32")]
-        inp[0].set_data_from_numpy(img)
-        out = [httpclient.InferRequestedOutput("embedding")]
         
-        # Warmup
-        client.infer(model_name, inp, outputs=out)
+        # Warmup (long timeout for TRT engine compilation per batch size)
+        print(f"  Warming up...")
+        try:
+            triton_infer_http(host, http_port, model_name, img, timeout=WARMUP_TIMEOUT)
+        except Exception as e:
+            print(f"  Warmup failed (batch {batch_size}): {e}")
+            results[f"batch_{batch_size}"] = {"error": str(e)}
+            continue
         
-        # Benchmark (3 runs)
+        # Benchmark (5 runs)
         latencies = []
-        for _ in range(3):
+        for _ in range(5):
             start = time.time()
             try:
-                result = client.infer(model_name, inp, outputs=out)
+                triton_infer_http(host, http_port, model_name, img, timeout=REQUEST_TIMEOUT)
                 elapsed_ms = (time.time() - start) * 1000
                 latencies.append(elapsed_ms)
             except Exception as e:

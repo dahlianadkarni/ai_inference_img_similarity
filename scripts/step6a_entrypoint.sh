@@ -69,7 +69,7 @@ fi
 
 echo -e "\n${YELLOW}Starting Backend 1: PyTorch FastAPI (port 8002)...${NC}"
 
-python3 -m uvicorn src.inference_service.server:app \
+python3 -m src.inference_service.server \
     --host 0.0.0.0 \
     --port 8002 \
     --log-level info \
@@ -200,7 +200,7 @@ while true; do
     # Check if any process died
     if ! kill -0 $PYTORCH_PID 2>/dev/null; then
         echo -e "${RED}✗ PyTorch died, restarting...${NC}"
-        python3 -m uvicorn src.inference_service.server:app \
+        python3 -m src.inference_service.server \
             --host 0.0.0.0 --port 8002 --log-level info \
             > "$LOG_DIR/pytorch.log" 2>&1 &
         PYTORCH_PID=$!

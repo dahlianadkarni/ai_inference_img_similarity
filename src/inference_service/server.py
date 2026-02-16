@@ -341,6 +341,10 @@ def create_app() -> FastAPI:
     return app
 
 
+# Module-level app instance for uvicorn CLI: `uvicorn src.inference_service.server:app`
+app = create_app()
+
+
 def main():
     """Main entry point."""
     import argparse

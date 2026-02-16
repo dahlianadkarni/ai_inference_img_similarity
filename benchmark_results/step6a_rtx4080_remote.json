@@ -1,0 +1,120 @@
+{
+  "config": {
+    "host": "173.185.79.174",
+    "iterations": 30,
+    "batch_sizes": [
+      1,
+      4,
+      8,
+      16,
+      32
+    ],
+    "timestamp": "2026-02-15 16:57:48"
+  },
+  "backends": {
+    "pytorch": {
+      "single_image": {
+        "mean_ms": 219.16412512461343,
+        "median_ms": 198.51791858673096,
+        "p95_ms": 400.6755471229553,
+        "p99_ms": 416.6656422615051,
+        "min_ms": 180.4790496826172,
+        "max_ms": 423.0990409851074,
+        "std_ms": 63.85591899328689,
+        "iterations": 30
+      },
+      "batch": {
+        "batch_1": {
+          "mean_ms": 262.19797134399414,
+          "throughput_imgs_per_sec": 3.813912040867916
+        },
+        "batch_4": {
+          "mean_ms": 379.1891733805339,
+          "throughput_imgs_per_sec": 10.548824388469065
+        },
+        "batch_8": {
+          "mean_ms": 493.8518206278483,
+          "throughput_imgs_per_sec": 16.199191064699054
+        },
+        "batch_16": {
+          "mean_ms": 619.4082895914713,
+          "throughput_imgs_per_sec": 25.831104085727926
+        },
+        "batch_32": {
+          "mean_ms": 1410.5870723724365,
+          "throughput_imgs_per_sec": 22.68559001195146
+        }
+      }
+    },
+    "triton_onnx": {
+      "single_image": {
+        "client_mean_ms": 337.35726674397785,
+        "client_median_ms": 274.4251489639282,
+        "client_p95_ms": 717.2472476959229,
+        "client_p99_ms": 844.1644549369813,
+        "client_min_ms": 243.9868450164795,
+        "client_max_ms": 895.8189487457275,
+        "iterations": 30,
+        "server_compute_ms": 5.655399999999999,
+        "server_request_ms": 16.264433333333333
+      },
+      "batch": {
+        "batch_1": {
+          "mean_ms": 260.3954792022705,
+          "throughput_imgs_per_sec": 3.840312447295669
+        },
+        "batch_4": {
+          "mean_ms": 588.0191326141357,
+          "throughput_imgs_per_sec": 6.802499745573486
+        },
+        "batch_8": {
+          "mean_ms": 500.9956359863281,
+          "throughput_imgs_per_sec": 15.968202964982144
+        },
+        "batch_16": {
+          "mean_ms": 727.7541637420654,
+          "throughput_imgs_per_sec": 21.985446181068923
+        },
+        "batch_32": {
+          "mean_ms": 1315.4631614685059,
+          "throughput_imgs_per_sec": 24.32603279006086
+        }
+      }
+    },
+    "triton_trt": {
+      "single_image": {
+        "client_mean_ms": 336.4834149678548,
+        "client_median_ms": 272.4626064300537,
+        "client_p95_ms": 738.0063891410828,
+        "client_p99_ms": 783.4732341766357,
+        "client_min_ms": 249.69124794006348,
+        "client_max_ms": 801.4397621154785,
+        "iterations": 30,
+        "server_compute_ms": 1.9954666666666667,
+        "server_request_ms": 12.660066666666667
+      },
+      "batch": {
+        "batch_1": {
+          "mean_ms": 272.3799705505371,
+          "throughput_imgs_per_sec": 3.6713419051290375
+        },
+        "batch_4": {
+          "mean_ms": 601.4195442199707,
+          "throughput_imgs_per_sec": 6.650931181805741
+        },
+        "batch_8": {
+          "mean_ms": 834.5944404602051,
+          "throughput_imgs_per_sec": 9.585493998245072
+        },
+        "batch_16": {
+          "mean_ms": 1270.4013347625732,
+          "throughput_imgs_per_sec": 12.594445205766617
+        },
+        "batch_32": {
+          "mean_ms": 1721.3090419769287,
+          "throughput_imgs_per_sec": 18.590502472030185
+        }
+      }
+    }
+  }
+}

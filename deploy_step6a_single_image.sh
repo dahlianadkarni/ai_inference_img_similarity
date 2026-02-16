@@ -240,7 +240,7 @@ Next Steps:
 1. Deploy to Vast.ai
 2. Run benchmark: scripts/benchmark_all_three.py
 3. Analyze results: scripts/analyze_step6a_results.py
-4. Document in STEP_6A_RESULTS.md
+4. Document in STEP_6A_A100_RESULTS.md
 
 EOF
 

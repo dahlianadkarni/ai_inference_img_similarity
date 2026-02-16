@@ -53,51 +53,31 @@ Step 5B (Optional): TensorRT Optimization - ✅ COMPLETE
 
 Step 6: Final Comparison & Multi-GPU Scaling (Optional)
 
-**Step 6A: Single-Machine 3-Way Comparison** (Recommended)
-    - Deploy all 3 backends on **one GPU instance** for apples-to-apples comparison:
-        - PyTorch FastAPI (Step 3)
-        - Triton ONNX CUDA EP (Step 4/5A)
-        - Triton ONNX TensorRT EP (Step 5B)
-    - **Deployment Approach**: Single all-in-one Docker image (for Vast.ai standard Docker instances)
-        - PyTorch: port 8002
-        - Triton ONNX: ports 8010/8011/8012 (HTTP/gRPC/Metrics)
-        - Triton TRT: ports 8020/8021/8022 (HTTP/gRPC/Metrics)
-        - See `Dockerfile.step6a-all`, `scripts/step6a_entrypoint.sh`, and `deploy_step6a_single_image.sh`
-        - All 3 services start automatically via entrypoint script
-        - TRT engine compilation happens on first load (2-5 min)
-    - Alternative: Docker Compose approach (requires VM instance with `vms_enabled=true`)
-        - See `docker-compose-step6a.yml` and `deploy_step6a.sh` (not used for standard Vast.ai instances)
-    - Benchmarking approach:
-        - **Remote**: `scripts/benchmark_all_three.py` from your Mac
-            - Includes network latency (~200-400ms) but relative comparison still valid
-            - Captures server-side metrics from Triton `/metrics` to show pure GPU time
-            - No SSH required, easier to run
-        - **Local**: `scripts/benchmark_all_three_local.py` after SSH into instance (optional)
-            - Eliminates network latency for true backend performance
-            - More accurate absolute timings
-            - Requires SSH access and pip install dependencies
-    - Measure and compare:
-        - Server-side GPU compute time (from Triton metrics, estimated for PyTorch)
-        - Single-image latency (p50, p95, p99)
-        - Batch throughput (images/sec at different batch sizes)
-        - Memory footprint (VRAM usage per backend)
-        - Cold-start/warmup time (TRT EP takes 2-5 min first load)
-        - Concurrent throughput (req/sec under same client load)
-    - Document in `STEP_6A_RESULTS.md` with comparison tables and winner declaration
-    - Instance choice: RTX A4000 or A5000 (~$0.30-0.50/hr)
-    - **Value**: Definitive answer on which backend is fastest for single-GPU production
+**Step 6A: Single-Machine 3-Way Comparison** - ✅ COMPLETE
+    - Deployed all 3 backends on **A100 SXM4 80GB** (Vast.ai) for apples-to-apples comparison:
+        - PyTorch FastAPI (Step 3) ✅
+        - Triton ONNX CUDA EP (Step 4/5A) ✅
+        - Triton ONNX TensorRT EP (Step 5B) ✅
+    - **Results (30 iterations, remote benchmark):**
+        - **PyTorch wins client-side:** 56.9ms single-image, 64.3 img/s batch-32
+        - **Triton ONNX wins server-side:** 4.4ms GPU compute (12.8× faster than PyTorch estimate)
+        - **TRT EP not recommended:** 29.1ms GPU compute (6.5× slower than ONNX), engine recompilation issues
+    - **Key insight:** Network/serialization overhead dominates remote benchmarks.
+      Triton ONNX achieves 4.4ms GPU compute but 182.9ms client-side (due to 602KB tensor transfer).
+      PyTorch achieves 56.9ms client-side by accepting efficient base64 JPEG (~10KB).
+    - **Production recommendation:** PyTorch FastAPI for client-facing API + Triton ONNX as local inference backend
+    - See `STEP_6A_A100_RESULTS.md` for full analysis, `benchmark_results/step6a_a100_remote.json` for raw data
 
-**Step 6B: Multi-GPU Scaling Study** (Optional)
-    - After determining single-GPU winner, test Triton's multi-GPU scaling
-    - Update Triton model config (`config.pbtxt`) to set:
-            instance_group [ { kind: KIND_GPU, count: 2 } ]  # or 4, 8
-    - Ensure the container is started with access to all GPUs (e.g., `--gpus all`)
-    - No Docker rebuild needed if only `config.pbtxt` changes; just update the file in the model repository
-    - Test on 2x, 4x, and/or 8x GPU instances (e.g., 4x RTX A6000, 8x A100)
-    - Run benchmarking scripts with increasing concurrent load to saturate GPUs
-    - Measure throughput scaling: Does 4x GPU = 4x throughput?
-    - Find saturation point: When does adding GPUs stop helping?
-    - Compare cost-efficiency: $/1000 images at each scale
-    - Document scaling limitations, bottlenecks, and cost analysis
-    - Document in `STEP_6B_MULTI_GPU_RESULTS.md`
-    - **Value**: Validates Triton's multi-GPU scaling story; answers "when do I need more GPUs?"
+**Step 6B: Multi-GPU Scaling Study** - ✅ COMPLETE
+    - Tested 4x RTX 4080 multi-GPU scaling on Vast.ai ✅
+    - **Results:**
+        - **Peak throughput:** 43.2 img/s at concurrency 32 (1.8× vs single GPU, only 45% efficiency) ✅
+        - **Scaling inefficiency:** Network overhead dominates (97% of latency), GPU compute only 8.4ms ✅
+        - **Cost-efficiency:** 2.2× more expensive per image than 1x GPU ✅
+        - **Bottlenecks:** 602KB tensor payload, PCIe Gen4 interconnect, low dynamic batching (22%) ✅
+        - **Saturation point:** Concurrency 32; throughput drops at 64+ due to queue time buildup ✅
+    - **Key finding:** Multi-GPU is **not recommended** for remote inference due to network bottleneck
+    - **Recommendation:** Use 1x A100 or horizontal scaling (3-4× single-GPU instances) for production
+    - **Optimization paths:** JPEG base64 input (5-6× faster), local deployment (14× faster), NVLink GPUs (2-3× better scaling)
+    - See `STEP_6B_RESULTS.md` for complete analysis
+    - **Value**: Proves that multi-GPU doesn't solve network-bound workloads; validated infrastructure decision-making

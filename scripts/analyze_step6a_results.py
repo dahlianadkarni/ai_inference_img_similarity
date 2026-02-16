@@ -15,7 +15,7 @@ Usage:
   python scripts/analyze_step6a_results.py \
     --remote benchmark_results/step6a_remote_comparison.json \
     --local benchmark_results/step6a_local_comparison.json \
-    --output STEP_6A_RESULTS.md
+    --output STEP_6A_A100_RESULTS.md
 """
 
 import argparse
@@ -486,7 +486,7 @@ def main():
                        default="benchmark_results/step6a_local_comparison.json",
                        help="Path to local benchmark JSON")
     parser.add_argument("--output", type=str,
-                       default="STEP_6A_RESULTS.md",
+                       default="STEP_6A_A100_RESULTS.md",
                        help="Output markdown file")
     parser.add_argument("--visualizations", action="store_true",
                        help="Generate visualization charts (requires matplotlib)")
