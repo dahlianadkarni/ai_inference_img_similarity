@@ -13,7 +13,7 @@ This file shows the components and how they interact.
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                            │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │                         UI Browser (http://127.0.0.1:8000)          │  │
+│  │                         UI Browser (http://127.0.0.1:8080)          │  │
 │  │  ┌──────────────────────────────────────────────────────────────┐  │  │
 │  │  │ Photo Review Interface                                       │  │  │
 │  │  │  - Exact Duplicates                                          │  │  │
@@ -297,5 +297,5 @@ if __name__ == "__main__":
     print("  1. Read ARCHITECTURE_REFACTOR.md for full details")
     print("  2. Read QUICKSTART_ARCHITECTURE.md for quick commands")
     print("  3. Run: python start_services.py")
-    print("  4. Open: http://127.0.0.1:8000")
+    print("  4. Open: http://127.0.0.1:8080")
     print("="*70)

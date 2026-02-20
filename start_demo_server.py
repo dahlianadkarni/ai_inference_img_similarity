@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Start demo server on port 8001 with demo dataset.
+Start demo server on port 8081 with demo dataset.
 
-This runs independently from the main Photos Library server (port 8000).
+This runs independently from the main Photos Library server (port 8080).
 """
 import sys
 from pathlib import Path
@@ -55,10 +55,10 @@ def main():
     )
     
     # Start server on different port
-    port = 8001
+    port = 8081
     logger.info(f"")
     logger.info(f"✓ Demo server starting at http://127.0.0.1:{port}")
-    logger.info(f"✓ Main server (Photos) runs at http://127.0.0.1:8000")
+    logger.info(f"✓ Main server (Photos) runs at http://127.0.0.1:8080")
     logger.info(f"")
     logger.info("Press Ctrl+C to stop")
     logger.info("=" * 60)

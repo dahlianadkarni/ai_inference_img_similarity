@@ -2,7 +2,7 @@
 
 This starts both services:
 1. Inference service (port 8002) - Stateless model inference
-2. UI client (port 8000) - Photo review interface
+2. UI client (port 8080) - Photo review interface
 
 They communicate via HTTP, allowing for independent scaling.
 """
@@ -78,7 +78,7 @@ def main():
     parser.add_argument(
         "--ui-port",
         type=int,
-        default=8000,
+        default=8080,
         help="Port for UI server",
     )
     parser.add_argument(
@@ -89,18 +89,18 @@ def main():
     parser.add_argument(
         "--ui-demo",
         action="store_true",
-        help="Start UI server in demo mode (use demo dataset on port 8001)",
+        help="Start UI server in demo mode (use demo dataset on port 8081)",
     )
     
     args = parser.parse_args()
     setup_logging()
     logger = logging.getLogger(__name__)
     
-    # Demo mode: Use port 8001 for UI but still start inference service
+    # Demo mode: Use port 8081 for UI but still start inference service
     if args.ui_demo:
-        if args.ui_port == 8000:
-            args.ui_port = 8001
-        logger.info("Demo mode: Using demo dataset on port 8001")
+        if args.ui_port == 8080:
+            args.ui_port = 8081
+        logger.info(f"Demo mode: Using demo dataset on port {args.ui_port}")
     
     inference_url = f"http://{args.inference_host}:{args.inference_port}/health"
     ui_url = f"http://{args.ui_host}:{args.ui_port}"

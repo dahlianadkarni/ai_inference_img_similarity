@@ -208,7 +208,7 @@ Launch the web UI to visually review duplicate pairs and delete them from Photos
 # Start the review UI server
 python -m src.ui.main
 
-# Opens at http://127.0.0.1:8000
+# Opens at http://127.0.0.1:8080
 ```
 
 **Features:**

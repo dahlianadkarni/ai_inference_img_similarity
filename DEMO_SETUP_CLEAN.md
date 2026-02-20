@@ -51,14 +51,14 @@ Opens at http://127.0.0.1:8001
 source venv/bin/activate
 python -m src.ui.main
 ```
-→ http://127.0.0.1:8000
+→ http://127.0.0.1:8080
 
-### Demo Server (Port 8001)
+### Demo Server (Port 8081)
 ```bash
 source venv/bin/activate
 python start_demo_server.py
 ```
-→ http://127.0.0.1:8001
+→ http://127.0.0.1:8081
 
 **Both can run simultaneously!**
 

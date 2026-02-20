@@ -7,7 +7,7 @@ import sys
 
 import uvicorn
 
-from .app_v4 import app, load_data
+from .app_v5 import app, load_data
 
 
 def setup_logging(verbose: bool = False):
@@ -57,7 +57,7 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
+        default=8080,
         help="Port to bind to",
     )
     parser.add_argument(

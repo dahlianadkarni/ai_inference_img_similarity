@@ -3,6 +3,7 @@
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
 **📚 Documentation:**
+- **[COMMANDS_CHEATSHEET.md](COMMANDS_CHEATSHEET.md)** — Quick cheatsheet commands to start servers, etc.
 - **[PLAN.md](PLAN.md)** — 6-step infrastructure learning plan (all steps complete ✅)
 - **[DOCKER_README.md](DOCKER_README.md)** — Step 2: Docker containerization guide with security best practices
 - **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Step 3: Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
@@ -13,7 +14,7 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 - **[STEP_6A_A100_RESULTS.md](STEP_6A_A100_RESULTS.md)** — Step 6A: 3-way backend comparison on A100 SXM4
 - **[STEP_6A_RTX4080_RESULTS.md](STEP_6A_RTX4080_RESULTS.md)** — Step 6A: RTX 4080 comparison (consumer vs datacenter GPU)
 - **[STEP_6B_RESULTS.md](STEP_6B_RESULTS.md)** — Step 6B: 4x RTX 4080 multi-GPU scaling study
-- **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8001)
+- **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8081)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
 
 **🎬 Project Presentation:**
@@ -82,11 +83,11 @@ python -m src.ui.main
 # Or start both inference + UI
 python start_services.py
 
-# Or use demo dataset (UI on port 8001; inference runs on port 8002)
+# Or use demo dataset (UI on port 8081; inference runs on port 8002)
 python start_services.py --ui-demo
 ```
 
-Open http://127.0.0.1:8000 (or the demo UI at http://127.0.0.1:8001). The inference service runs on http://127.0.0.1:8002.
+Open http://127.0.0.1:8080 (or the demo UI at http://127.0.0.1:8081). The inference service runs on http://127.0.0.1:8002.
 
 ## End-to-End Workflow (How the Pieces Fit)
 
@@ -106,6 +107,15 @@ python -m src.scanner.main --photos-library --use-applescript --keep-export --li
 Tip: With `--keep-export`, AppleScript exports into `.cache/photos_export` by default and subsequent scans can be incremental (it skips re-exporting files that are already present).
 
 macOS will prompt “Terminal wants to control Photos” on first run. Allow it.
+
+I have local photos stored in photos_local cache.
+Restore scan_for_embeddings.json from real photos (fast, no Photos app needed):
+```source venv/bin/activate
+python -m src.scanner.main .cache/photos_local \
+  --output scan_for_embeddings.json \
+  --duplicates-output scan_duplicates.json \
+  --cache-file .cache/scan_cache.json
+  ```
 
 If you want estimates before running a full scan of your Photos “originals” (Full Disk Access required), run:
 
