@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Duplicate Reviewer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #d2d2d7;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .control-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .control-panel h2 {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+            color: #1d1d1f;
+        }
+        .control-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .control-input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        .processing-status {
+            padding: 1rem;
+            background: #f5f5f7;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            font-weight: 500;
+        }
+        .processing-status.active {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .processing-status.running {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1565c0;
+        }
+        .processing-status.success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .processing-status.error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #2196f3;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .status-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .stats {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #86868b;
+        }
+        .current-threshold {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .group-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .similarity-badge {
+            background: #007aff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .image-item {
+            position: relative;
+            text-align: center;
+            border: 3px solid transparent;
+            border-radius: 8px;
+            padding: 0.5rem;
+            transition: all 0.2s;
+        }
+        .image-item.selected {
+            border-color: #ff3b30;
+            background: #fff5f5;
+        }
+        .image-item img {
+            max-width: 100%;
+            max-height: 120px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            object-fit: cover;
+        }
+        .image-item img.expanded {
+            max-height: 600px;
+            object-fit: contain;
+        }
+        .image-checkbox {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+        .image-info {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            color: #86868b;
+            word-break: break-all;
+        }
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-keep {
+            background: #34c759;
+            color: white;
+        }
+        .btn-delete {
+            background: #ff3b30;
+            color: white;
+        }
+        .btn-not-similar {
+            background: #ff9500;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: #86868b;
+        }
+        .reviewed-badge {
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #f5f5f7;
+            border-radius: 8px;
+            color: #34c759;
+            font-weight: 600;
+        }
+        .feedback-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #856404;
+        }
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #d2d2d7;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #86868b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover {
+            color: #1d1d1f;
+        }
+        .tab.active {
+            color: #007aff;
+            border-bottom-color: #007aff;
+        }
+        .tab:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Workflow Tabs (v5 - static HTML tabs) */
+        .workflow-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #d2d2d7;
+        }
+        .workflow-tab {
+            padding: 1rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #86868b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .workflow-tab:hover {
+            color: #1d1d1f;
+        }
+        .workflow-tab.active {
+            color: #007aff;
+            border-bottom-color: #007aff;
+        }
+        .workflow-tab:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .workflow-tab .badge {
+            display: inline-block;
+            background: #e5e5ea;
+            color: #1d1d1f;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+        .workflow-tab.active .badge {
+            background: #007aff;
+            color: white;
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        .results-container {
+            margin-top: 1rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #86868b;
+        }
+        .empty-state h3 {
+            color: #1d1d1f;
+            margin-bottom: 0.5rem;
+        }
+        .type-section {
+            margin-bottom: 2rem;
+        }
+        .type-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        .type-header:hover {
+            opacity: 0.95;
+        }
+        .type-header.collapsed {
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        .type-content {
+            max-height: 10000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .type-content.collapsed {
+            max-height: 0;
+        }
+        .type-header.exact {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+        }
+        .type-header.perceptual {
+            background: linear-gradient(135deg, #ff9500 0%, #ffb347 100%);
+        }
+        .type-header.ai {
+            background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+        }
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .mini-group-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .mini-group-card.selected {
+            border-color: #007aff;
+            background: #f0f8ff;
+        }
+        .mini-group-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+        .mini-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .mini-images-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .mini-images-preview img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .group-stats {
+            font-size: 0.75rem;
+            color: #86868b;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .selection-summary {
+            position: sticky;
+            top: 4rem;
+            z-index: 50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .selection-summary.exact {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+        }
+        .selection-summary.perceptual {
+            background: linear-gradient(135deg, #ff9500 0%, #ffb347 100%);
+        }
+        .selection-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.95);
+            overflow: auto;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: #ccc;
+        }
+        .modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        input[type="checkbox"] {
+            accent-color: #8e8e93;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📸 Photo Duplicate Reviewer</h1>
+        <div class="stats">
+            <span id="stats-total">Loading...</span>
+            <span id="stats-feedback" style="margin-left: 1rem;"></span>
+            <span id="stats-threshold" class="current-threshold"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Workflow Tabs -->
+        <div class="workflow-tabs">
+            <button class="workflow-tab active" onclick="switchTab('scanner')" id="tab-scanner">
+                📱 Scanner
+                <span class="badge" id="scanner-count">Step 1</span>
+            </button>
+            <button class="workflow-tab" onclick="switchTab('ai')" id="tab-ai">
+                🧠 AI Embeddings / Inference
+                <span class="badge" id="ai-count">Step 2</span>
+            </button>
+        </div>
+
+        <!-- SCANNER TAB -->
+        <div class="tab-panel active" id="scanner-tab">
+            <div class="control-panel">
+                <h2>🔍 Step 1: Scan for Photos</h2>
+                <p style="color: #86868b; margin-bottom: 1rem; font-size: 0.875rem;">
+                    Scan your photo library to find exact and perceptual duplicates using MD5 hashing and image fingerprinting.
+                </p>
+
+                <div class="control-row">
+                    <label style="font-weight: 600; color: #1d1d1f;">Source:</label>
+                    <select id="scan-source" class="control-input">
+                        <option value="photos-library">Photos Library</option>
+                        <option value="directory">Directory</option>
+                    </select>
+                    <select id="photos-access" class="control-input">
+                        <option value="applescript">AppleScript export (no Full Disk Access, slower)</option>
+                        <option value="originals">Direct originals (requires Full Disk Access, faster)</option>
+                    </select>
+                    <input id="scan-path" type="text" class="control-input" placeholder="Directory path" style="display: none; flex: 1;">
+                </div>
+
+                <div class="control-row">
+                    <label style="font-weight: 600; color: #1d1d1f;">Options:</label>
+                    <input id="scan-limit" type="number" class="control-input" placeholder="Limit (default: 20)" value="20" style="width: 150px;">
+                    <label style="font-size: 0.875rem; color: #86868b; display: flex; align-items: center; gap: 0.5rem;">
+                        <input id="use-cache" type="checkbox" checked>
+                        Use cache
+                    </label>
+                    <select id="md5-mode" class="control-input" title="MD5 strategy">
+                        <option value="on-demand">MD5: on-demand (recommended)</option>
+                        <option value="always">MD5: always</option>
+                        <option value="never">MD5: never</option>
+                    </select>
+                    <button class="btn btn-keep" onclick="startScan()" id="btn-scan">▶️ Start Scan</button>
+                    <button class="btn" onclick="clearScanResults()" id="btn-clear-scan" style="background: #a2aaad; color: white;">🗑️ Clear Scan</button>
+                </div>
+
+                <div id="scan-info" style="display: none; background: #f5f5f7; padding: 0.75rem 1rem; border-radius: 6px; margin: 1rem 0; font-size: 0.875rem; color: #86868b;">
+                    <strong style="color: #1d1d1f;">📊 Last Scan:</strong>
+                    <span id="scan-total">-</span> images •
+                    Cache: <span id="scan-cache">-</span> entries (<span id="scan-cache-size">-</span>) •
+                    Duplicates: <span id="scan-exact-dupes">-</span> exact, <span id="scan-perceptual-dupes">-</span> perceptual •
+                    MD5: <span id="scan-md5-mode">-</span>
+                </div>
+
+                <div id="processing-status-scan" class="processing-status"></div>
+            </div>
+
+            <!-- Scanner Results -->
+            <div id="scanner-results" class="results-container">
+                <div class="empty-state">
+                    <h3>📊 No scanner results yet</h3>
+                    <p>Click "Start Scan" above to find exact and perceptual duplicates.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI TAB -->
+        <div class="tab-panel" id="ai-tab">
+            <div class="control-panel">
+                <h2>🧠 Step 2: Generate AI Embeddings</h2>
+                <p style="color: #86868b; margin-bottom: 1rem; font-size: 0.875rem;">
+                    Analyze scanned photos with AI to find visually similar images beyond exact/perceptual matches.
+                </p>
+
+                <div class="control-row" style="align-items: flex-start; gap: 1rem;">
+                    <label style="font-weight: 600; color: #1d1d1f;">Estimate (local only):</label>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        <button class="btn" onclick="estimateEmbeddings()" id="btn-estimate" style="background: #5856d6; color: white;">⏱️ Estimate Time</button>
+                        <span style="font-size: 0.75rem; color: #86868b;">Uses local throughput only.</span>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <label style="font-weight: 600; color: #1d1d1f;">Similarity Threshold:</label>
+                    <input id="similarity-threshold" type="number" class="control-input" value="0.85" step="0.01" min="0" max="1" style="width: 100px;">
+                    <span style="font-size: 0.75rem; color: #86868b;">(Higher = more strict, e.g., 0.99 = nearly identical)</span>
+                </div>
+
+                <div class="control-row">
+                    <label style="font-weight: 600; color: #1d1d1f;">Inference Mode:</label>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="auto">
+                            Auto (try remote, fallback local)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="remote" checked>
+                            Remote (requires service)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem;">
+                            <input type="radio" name="inference-mode" value="local">
+                            Local (on this Mac)
+                        </label>
+                        <button class="btn btn-keep" onclick="startEmbeddings()" id="btn-embeddings">🧠 Generate Embeddings</button>
+                        <button class="btn" onclick="clearEmbeddings()" id="btn-clear-embeddings" style="background: #a2aaad; color: white;">🗑️ Clear Results</button>
+                    </div>
+                </div>
+
+                <div id="estimate-results" style="display: none; margin-top: 0.5rem; padding: 1rem; background: #e3f2fd; border-radius: 8px; border: 1px solid #1976d2;">
+                    <div style="font-size: 0.875rem; color: #1565c0;"></div>
+                </div>
+
+                <div class="control-row">
+                    <strong>After Giving Feedback:</strong>
+                    <button class="btn btn-not-similar" onclick="startEmbeddings()">🔄 Re-analyze with Feedback</button>
+                </div>
+
+                <div id="processing-status-ai" class="processing-status"></div>
+            </div>
+
+            <!-- AI Results -->
+            <div id="ai-results" class="results-container">
+                <div class="empty-state">
+                    <h3>🧠 No AI results yet</h3>
+                    <p>Run "Generate Embeddings" after scanning to find AI-detected similar groups.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image modal -->
+        <div id="imageModal" class="modal" onclick="closeModal()">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <button id="modalPrev" onclick="event.stopPropagation(); modalPrevImage();" 
+                    style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); 
+                           background: rgba(0,0,0,0.7); color: white; border: none; 
+                           padding: 1rem 1.5rem; font-size: 2rem; cursor: pointer; border-radius: 8px;
+                           font-weight: bold;">
+                ‹
+            </button>
+            <button id="modalNext" onclick="event.stopPropagation(); modalNextImage();" 
+                    style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); 
+                           background: rgba(0,0,0,0.7); color: white; border: none; 
+                           padding: 1rem 1.5rem; font-size: 2rem; cursor: pointer; border-radius: 8px;
+                           font-weight: bold;">
+                ›
+            </button>
+            <img class="modal-content" id="modalImage" onclick="event.stopPropagation()">
+            <div class="modal-info" id="modalInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let groups = [];
+        let aiGroupsOverlapExact = []; // AI groups that overlap with exact duplicates
+        let aiGroupsOverlapPerceptual = []; // AI groups that overlap with perceptual duplicates
+        let aiGroupsNewDiscoveries = []; // AI groups with no overlap
+        let scanDuplicates = null;
+        let scanDataMap = {}; // file_path -> scan data with size
+        let selectedImages = new Map(); // groupId -> Set of selected indices (for AI groups)
+        let selectedExactImages = new Map(); // groupIdx -> Set of image indices
+        let selectedPerceptualImages = new Map(); // groupIdx -> Set of image indices
+        let activeExactGroups = new Set(); // Set of group indices that are active (checked)
+        let activePerceptualGroups = new Set(); // Set of group indices that are active (checked)
+        let activeAIGroups = new Set(); // Set of AI group IDs that are active (checked)
+        let collapsedSections = { 
+            exact: false, 
+            perceptual: false, 
+            ai: false,
+            overlaps_with_exact_matches: true,  // Collapsed by default since usually fewer items
+            overlaps_with_perceptual_matches: true,  // Collapsed by default since usually fewer items
+            new_ai_discoveries: false  // Expanded by default - most interesting
+        }; // type -> collapsed state
+        let statusCheckInterval = null;
+        let currentTab = 'scan'; // 'scan' or 'ai'
+        let modalCurrentGroup = null; // { type, groupIdx, files }
+        let modalCurrentIndex = 0;
+
+        function openModal(imagePath, fileName, groupType, groupIdx) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+
+            // Get the files for this group
+            let files = [];
+            if (groupType === 'exact' && scanDuplicates?.exact_groups) {
+                files = scanDuplicates.exact_groups[groupIdx]?.files || [];
+            } else if (groupType === 'perceptual' && scanDuplicates?.perceptual_groups) {
+                files = scanDuplicates.perceptual_groups[groupIdx]?.files || [];
+            } else if (groupType === 'ai') {
+                const group = groups.find(g => g.group_id === groupIdx);
+                files = group ? group.files.map(f => f.path) : [];
+            }
+
+            // Sort files by date (oldest first) for exact/perceptual, keep as-is for AI
+            let sortedFiles;
+            if (groupType === 'ai') {
+                sortedFiles = files.map((path, idx) => ({
+                    path,
+                    originalIdx: idx,
+                    date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+                }));
+            } else {
+                sortedFiles = files.map((path, idx) => ({
+                    path,
+                    originalIdx: idx,
+                    date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+                })).sort((a, b) => a.date.localeCompare(b.date));
+            }
+
+            // Find the current image index in the sorted array
+            const currentIdx = sortedFiles.findIndex(f => f.path === imagePath);
+
+            modalCurrentGroup = { 
+                type: groupType, 
+                groupIdx: groupIdx, 
+                files: sortedFiles.map(f => f.path),
+                originalIndices: sortedFiles.map(f => f.originalIdx)
+            };
+            modalCurrentIndex = currentIdx >= 0 ? currentIdx : 0;
+
+            updateModalImage();
+            modal.classList.add('active');
+        }
+
+        function updateModalImage() {
+            if (!modalCurrentGroup || modalCurrentGroup.files.length === 0) return;
+
+            const modalImg = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            const path = modalCurrentGroup.files[modalCurrentIndex];
+            const fileName = path.split('/').pop();
+
+            modalImg.src = '/api/image?path=' + encodeURIComponent(path);
+
+            const item = scanDataMap[path];
+            let info = fileName + '<br>';
+            info += '<strong>Image ' + (modalCurrentIndex + 1) + ' of ' + modalCurrentGroup.files.length + '</strong>';
+            if (item) {
+                const date = item.photo_date || item.created_at || 'Unknown';
+                const size = formatBytes(item.file_size || 0);
+                info += '<br>Date: ' + date + '<br>Size: ' + size;
+                if (item.width && item.height) {
+                    info += '<br>Dimensions: ' + item.width + 'x' + item.height;
+                }
+            }
+
+            // Add selection controls for both exact and perceptual groups
+            if (modalCurrentGroup.type === 'perceptual' || modalCurrentGroup.type === 'exact' || modalCurrentGroup.type === 'ai') {
+                const selectedMap = modalCurrentGroup.type === 'perceptual' ? selectedPerceptualImages : 
+                                   modalCurrentGroup.type === 'exact' ? selectedExactImages : 
+                                   selectedImages;
+                const selected = selectedMap.get(modalCurrentGroup.groupIdx) || new Set();
+                const originalIdx = modalCurrentGroup.originalIndices ? modalCurrentGroup.originalIndices[modalCurrentIndex] : modalCurrentIndex;
+                const isSelected = selected.has(originalIdx);
+                info += '<br><br>';
+                info += '<button onclick="event.stopPropagation(); toggleModalSelection()" style="padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.875rem; ';
+                if (isSelected) {
+                    info += 'background: #ff9500; color: white;">🗑️ Selected for Deletion - Click to Keep</button>';
+                } else {
+                    info += 'background: #34c759; color: white;">✓ Will Keep - Click to Delete</button>';
+                }
+            }
+
+            modalInfo.innerHTML = info;
+
+            // Update navigation button states
+            const prevBtn = document.getElementById('modalPrev');
+            const nextBtn = document.getElementById('modalNext');
+            if (prevBtn) prevBtn.disabled = modalCurrentIndex === 0;
+            if (nextBtn) nextBtn.disabled = modalCurrentIndex === modalCurrentGroup.files.length - 1;
+        }
+
+        function toggleModalSelection() {
+            if (!modalCurrentGroup || (modalCurrentGroup.type !== 'perceptual' && modalCurrentGroup.type !== 'exact' && modalCurrentGroup.type !== 'ai')) return;
+
+            // Toggle the selection using the original index
+            const groupIdx = modalCurrentGroup.groupIdx;
+            const imageIdx = modalCurrentGroup.originalIndices ? modalCurrentGroup.originalIndices[modalCurrentIndex] : modalCurrentIndex;
+
+            if (modalCurrentGroup.type === 'perceptual') {
+                togglePerceptualImage(groupIdx, imageIdx);
+            } else if (modalCurrentGroup.type === 'exact') {
+                toggleExactImage(groupIdx, imageIdx);
+            } else if (modalCurrentGroup.type === 'ai') {
+                toggleAIImage(groupIdx, imageIdx);
+            }
+
+            // Just update the modal display, don't re-render entire page
+            updateModalImage();
+        }
+
+        function modalPrevImage() {
+            if (!modalCurrentGroup || modalCurrentIndex <= 0) return;
+            modalCurrentIndex--;
+            updateModalImage();
+        }
+
+        function modalNextImage() {
+            if (!modalCurrentGroup || modalCurrentIndex >= modalCurrentGroup.files.length - 1) return;
+            modalCurrentIndex++;
+            updateModalImage();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            modalCurrentGroup = null;
+            modalCurrentIndex = 0;
+
+            // Update the page to reflect any selection changes made in the modal
+            render();
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('imageModal');
+            if (!modal.classList.contains('active')) return;
+
+            if (e.key === 'ArrowLeft') {
+                modalPrevImage();
+            } else if (e.key === 'ArrowRight') {
+                modalNextImage();
+            } else if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        function togglePerceptualImage(groupIdx, imageIdx) {
+            if (!selectedPerceptualImages.has(groupIdx)) {
+                selectedPerceptualImages.set(groupIdx, new Set());
+            }
+            const selected = selectedPerceptualImages.get(groupIdx);
+            if (selected.has(imageIdx)) {
+                selected.delete(imageIdx);
+            } else {
+                selected.add(imageIdx);
+            }
+            render();
+        }
+
+        function toggleExactImage(groupIdx, imageIdx) {
+            if (!selectedExactImages.has(groupIdx)) {
+                selectedExactImages.set(groupIdx, new Set());
+            }
+            const selected = selectedExactImages.get(groupIdx);
+            if (selected.has(imageIdx)) {
+                selected.delete(imageIdx);
+            } else {
+                selected.add(imageIdx);
+            }
+            render();
+        }
+
+        function toggleGroupActive(type, groupIdx) {
+            if (type === 'ai') {
+                // AI groups use groupId instead of index
+                const groupId = groupIdx;
+                const group = groups.find(g => g.group_id === groupId);
+
+                if (activeAIGroups.has(groupId)) {
+                    // Unchecking: Deactivate group and clear selection
+                    activeAIGroups.delete(groupId);
+                    selectedImages.delete(groupId);
+                } else {
+                    // Checking: Activate group and restore previous selection or use default
+                    activeAIGroups.add(groupId);
+                    if (!selectedImages.has(groupId) && group) {
+                        // No previous selection, apply default (all but first)
+                        const selected = new Set(group.files.map((_, idx) => idx).filter(idx => idx !== 0));
+                        selectedImages.set(groupId, selected);
+                    }
+                }
+            } else {
+                const activeGroups = type === 'exact' ? activeExactGroups : activePerceptualGroups;
+                const selectedImagesMap = type === 'exact' ? selectedExactImages : selectedPerceptualImages;
+                const groupsList = type === 'exact' ? scanDuplicates.exact_groups : scanDuplicates.perceptual_groups;
+                const group = groupsList[groupIdx];
+
+                if (activeGroups.has(groupIdx)) {
+                    // Unchecking: Deactivate group and clear selection (all keep)
+                    activeGroups.delete(groupIdx);
+                    selectedImagesMap.delete(groupIdx);
+                } else {
+                    // Checking: Activate group and restore previous selection or use default
+                    activeGroups.add(groupIdx);
+                    if (!selectedImagesMap.has(groupIdx) && group) {
+                        // No previous selection, apply default (all but oldest)
+                        const oldestIdx = getOldestImageIndex(group.files);
+                        const selected = new Set(group.files.map((_, idx) => idx).filter(idx => idx !== oldestIdx));
+                        selectedImagesMap.set(groupIdx, selected);
+                    }
+                }
+            }
+            render();
+        }
+
+        function getOldestImageIndex(files) {
+            const filesWithDates = files.map((path, idx) => ({
+                idx,
+                date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+            }));
+            filesWithDates.sort((a, b) => a.date.localeCompare(b.date));
+            return filesWithDates[0].idx;
+        }
+
+        function getSortedFilesWithInfo(files) {
+            const filesWithInfo = files.map((path, idx) => ({
+                path,
+                originalIdx: idx,
+                date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+            }));
+            filesWithInfo.sort((a, b) => a.date.localeCompare(b.date));
+            return filesWithInfo;
+        }
+
+        function selectAllPerceptualDefault() {
+            if (!scanDuplicates?.perceptual_groups) return;
+
+            activePerceptualGroups.clear();
+            selectedPerceptualImages.clear();
+            scanDuplicates.perceptual_groups.forEach((group, groupIdx) => {
+                const oldestIdx = getOldestImageIndex(group.files);
+                const selected = new Set(group.files.map((_, idx) => idx).filter(idx => idx !== oldestIdx));
+                if (selected.size > 0) {
+                    selectedPerceptualImages.set(groupIdx, selected);
+                    activePerceptualGroups.add(groupIdx);
+                }
+            });
+            render();
+        }
+
+        function deselectAllPerceptual() {
+            selectedPerceptualImages.clear();
+            activePerceptualGroups.clear();
+            render();
+        }
+
+        function selectAllExactDefault() {
+            if (!scanDuplicates?.exact_groups) return;
+
+            activeExactGroups.clear();
+            selectedExactImages.clear();
+            scanDuplicates.exact_groups.forEach((group, groupIdx) => {
+                const oldestIdx = getOldestImageIndex(group.files);
+                const selected = new Set(group.files.map((_, idx) => idx).filter(idx => idx !== oldestIdx));
+                if (selected.size > 0) {
+                    selectedExactImages.set(groupIdx, selected);
+                    activeExactGroups.add(groupIdx);
+                }
+            });
+            render();
+        }
+
+        function deselectAllExact() {
+            selectedExactImages.clear();
+            activeExactGroups.clear();
+            render();
+        }
+
+        function selectAllAIDefault() {
+            if (!groups || groups.length === 0) return;
+
+            activeAIGroups.clear();
+            selectedImages.clear();
+            groups.forEach(group => {
+                // For AI groups, select all but the first image
+                const selected = new Set(group.files.map((_, idx) => idx).filter(idx => idx !== 0));
+                if (selected.size > 0) {
+                    selectedImages.set(group.group_id, selected);
+                    activeAIGroups.add(group.group_id);
+                }
+            });
+            render();
+        }
+
+        function deselectAllAI() {
+            selectedImages.clear();
+            activeAIGroups.clear();
+            render();
+        }
+
+        function toggleAIImage(groupId, imageIdx) {
+            if (!selectedImages.has(groupId)) {
+                selectedImages.set(groupId, new Set());
+            }
+            const selected = selectedImages.get(groupId);
+            if (selected.has(imageIdx)) {
+                selected.delete(imageIdx);
+            } else {
+                selected.add(imageIdx);
+            }
+            render();
+        }
+
+        // Progress overlay utilities
+        function showProgressOverlay(message) {
+            // Remove existing overlay if any
+            hideProgressOverlay();
+
+            // Create translucent background
+            const overlay = document.createElement('div');
+            overlay.id = 'progress-overlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+
+            // Create message box
+            const messageBox = document.createElement('div');
+            messageBox.id = 'progress-message';
+            messageBox.style.cssText = 'background:rgba(0,0,0,0.9);color:white;padding:30px 50px;border-radius:12px;font-size:18px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5)';
+            messageBox.innerHTML = message;
+
+            overlay.appendChild(messageBox);
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+
+        function hideProgressOverlay() {
+            const overlay = document.getElementById('progress-overlay');
+            if (overlay) document.body.removeChild(overlay);
+        }
+
+        function updateProgressMessage(message) {
+            const messageBox = document.getElementById('progress-message');
+            if (messageBox) messageBox.innerHTML = message;
+        }
+
+        // Generic batch delete function for all group types
+        async function batchDeleteSelected(config) {
+            const filesToDelete = [];
+            let totalSize = 0;
+
+            // Collect files from active groups
+            config.activeGroups.forEach(groupKey => {
+                const selected = config.selectedMap.get(groupKey);
+                const group = config.getGroup(groupKey);
+                if (!group || !selected) return;
+
+                selected.forEach(imgIdx => {
+                    const path = config.getPath(group, imgIdx);
+                    filesToDelete.push(path);
+                    totalSize += scanDataMap[path]?.file_size || 0;
+                });
+            });
+
+            if (filesToDelete.length === 0) return;
+
+            if (!confirm(`Add ${filesToDelete.length} photo(s) to Duplicates album?\n\nPotential space to save: ${formatBytes(totalSize)}\n\nYou can then delete them manually from Photos.app\n(which properly syncs to iCloud)`)) {
+                return;
+            }
+
+            showProgressOverlay(`<div style="text-align:center">Adding photos to Duplicates album...<br><span id="progress-count">0/${filesToDelete.length}</span></div>`);
+
+            try {
+                let addedCount = 0;
+                let failedCount = 0;
+                for (let i = 0; i < filesToDelete.length; i++) {
+                    updateProgressMessage(`<div style="text-align:center">Adding photos to Duplicates album...<br><span id="progress-count">${i + 1}/${filesToDelete.length}</span></div>`);
+                    const success = await addToDuplicatesAlbum(filesToDelete[i]);
+                    if (success) addedCount++;
+                    else failedCount++;
+                }
+
+                hideProgressOverlay();
+
+                if (failedCount > 0) {
+                    alert(`⚠️ Added ${addedCount} photos, ${failedCount} failed\n\nCheck console for details.`);
+                } else {
+                    const openAlbum = confirm(`✓ Added ${addedCount} photo(s) to duplicates\n\nPotential savings: ${formatBytes(totalSize)}\n\nClick OK to open and view the duplicates`);
+                    if (openAlbum) {
+                        await openDuplicatesAlbum();
+                    }
+                }
+                config.selectedMap.clear();
+                config.activeGroups.clear();
+                loadGroups();
+            } catch (error) {
+                hideProgressOverlay();
+                alert('Failed: ' + error.message);
+            }
+        }
+
+        // Specific batch delete functions using the generic implementation
+        async function batchDeleteAISelected() {
+            await batchDeleteSelected({
+                activeGroups: activeAIGroups,
+                selectedMap: selectedImages,
+                getGroup: (groupId) => groups.find(g => g.group_id === groupId),
+                getPath: (group, imgIdx) => group.files[imgIdx].path
+            });
+        }
+
+        async function batchDeletePerceptualSelected() {
+            await batchDeleteSelected({
+                activeGroups: activePerceptualGroups,
+                selectedMap: selectedPerceptualImages,
+                getGroup: (groupIdx) => scanDuplicates.perceptual_groups[groupIdx],
+                getPath: (group, imgIdx) => group.files[imgIdx]
+            });
+        }
+
+        async function batchDeleteExactSelected() {
+            await batchDeleteSelected({
+                activeGroups: activeExactGroups,
+                selectedMap: selectedExactImages,
+                getGroup: (groupIdx) => scanDuplicates.exact_groups[groupIdx],
+                getPath: (group, imgIdx) => group.files[imgIdx]
+            });
+        }
+
+        // Load scan info
+        async function loadScanInfo() {
+            try {
+                const response = await fetch('/api/scan-info');
+                const info = await response.json();
+
+                if (info.scan_completed) {
+                    document.getElementById('scan-info').style.display = 'block';
+                    document.getElementById('scan-total').textContent = info.total_images;
+                    document.getElementById('scan-cache').textContent = info.cache_entries;
+                    document.getElementById('scan-cache-size').textContent = info.cache_size_mb + ' MB';
+                    document.getElementById('scan-exact-dupes').textContent = info.exact_duplicate_groups;
+                    document.getElementById('scan-perceptual-dupes').textContent = info.perceptual_duplicate_groups;
+                    document.getElementById('scan-md5-mode').textContent = info.md5_mode || 'unknown';
+                }
+            } catch (error) {
+                console.error('Failed to load scan info:', error);
+            }
+        }
+
+        // Setup scan source selector
+        document.addEventListener('DOMContentLoaded', () => {
+            loadScanInfo(); // Load scan info on page load
+
+            const scanSource = document.getElementById('scan-source');
+            const scanPath = document.getElementById('scan-path');
+            const photosAccess = document.getElementById('photos-access');
+
+            scanSource.addEventListener('change', (e) => {
+                if (e.target.value === 'directory') {
+                    scanPath.style.display = 'block';
+                    scanPath.required = true;
+                    photosAccess.style.display = 'none';
+                } else {
+                    scanPath.style.display = 'none';
+                    scanPath.required = false;
+                    photosAccess.style.display = 'block';
+                }
+            });
+        });
+
+        async function startScan() {
+            const source = document.getElementById('scan-source').value;
+            const photos_access = document.getElementById('photos-access').value;
+            const path = document.getElementById('scan-path').value;
+            const limit = parseInt(document.getElementById('scan-limit').value) || 20;
+            const use_cache = document.getElementById('use-cache').checked;
+            const md5_mode = document.getElementById('md5-mode').value;
+
+            if (source === 'directory' && !path) {
+                alert('Please enter a directory path');
+                return;
+            }
+
+            const btnScan = document.getElementById('btn-scan');
+            btnScan.disabled = true;
+
+            // Show immediate feedback with overlay
+            showProgressOverlay('Initializing photo scan...');
+            showStatus('scan', 'running', 'Initializing photo scan...');
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source, photos_access, path, limit, use_cache, md5_mode })
+                });
+
+                if (response.ok) {
+                    startStatusPolling('scan');
+                } else {
+                    const error = await response.json();
+                    hideProgressOverlay();
+                    showStatus('scan', 'error', error.detail || 'Scan failed');
+                    btnScan.disabled = false;
+                }
+            } catch (error) {
+                hideProgressOverlay();
+                showStatus('scan', 'error', 'Failed to start scan: ' + error.message);
+                btnScan.disabled = false;
+            }
+        }
+
+        async function clearScanResults() {
+            if (!confirm('Clear scan results and cache?')) return;
+            try {
+                const response = await fetch('/api/clear-scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    showStatus('scan', 'error', err.detail || 'Failed to clear scan results');
+                    return;
+                }
+
+                // Reset UI state
+                scanDuplicates = null;
+                scanDataMap = {};
+                selectedExactImages.clear();
+                selectedPerceptualImages.clear();
+                activeExactGroups.clear();
+                activePerceptualGroups.clear();
+                document.getElementById('scan-info').style.display = 'none';
+                document.getElementById('scanner-count').textContent = 'Step 1';
+
+                document.getElementById('scanner-results').innerHTML = '<div class="empty-state"><h3>📊 No scanner results yet</h3><p>Click "Start Scan" above to find exact and perceptual duplicates.</p></div>';
+
+                showStatus('scan', 'success', 'Scan results cleared');
+                setTimeout(() => {
+                    document.getElementById('processing-status-scan').classList.remove('active');
+                }, 1500);
+                updateStats(0.85);
+            } catch (err) {
+                console.error('Error clearing scan:', err);
+                showStatus('scan', 'error', 'Error clearing scan results');
+            }
+        }
+
+        async function clearEmbeddings() {
+            if (!confirm('Clear all embedding results and groups?')) return;
+
+            try {
+                const response = await fetch('/api/clear-embeddings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert('Error: ' + (error.detail || 'Failed to clear embeddings'));
+                    return;
+                }
+
+                // Clear the AI results container and reload
+                document.getElementById('ai-results').innerHTML = '<div class="empty-state"><h3>🧠 No AI results yet</h3><p>Run "Generate Embeddings" after scanning to find AI-detected similar groups.</p></div>';
+                document.getElementById('ai-count').textContent = 'Step 2';
+                alert('Embeddings cleared');
+            } catch (err) {
+                console.error('Error clearing embeddings:', err);
+                alert('Error: ' + err.message);
+            }
+        }
+
+        async function startEmbeddings() {
+            const threshold = parseFloat(document.getElementById('similarity-threshold').value) || 0.85;
+            const inferenceMode = document.querySelector('input[name="inference-mode"]:checked').value || 'remote';
+
+            const btnEmbeddings = document.getElementById('btn-embeddings');
+            btnEmbeddings.disabled = true;
+
+            // Show immediate feedback
+            showStatus('ai', 'running', `Initializing embedding generation (${inferenceMode} mode)...`);
+
+            try {
+                const response = await fetch('/api/embeddings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        similarity_threshold: threshold, 
+                        estimate: false,
+                        inference_mode: inferenceMode,
+                        service_url: null  // Use backend default from environment
+                    })
+                });
+
+                if (response.ok) {
+                    // Hide estimate results when starting actual generation
+                    document.getElementById('estimate-results').style.display = 'none';
+                    startStatusPolling('ai');
+                } else {
+                    const error = await response.json();
+                    showStatus('ai', 'error', error.detail || 'Embedding generation failed');
+                    btnEmbeddings.disabled = false;
+                }
+            } catch (error) {
+                showStatus('ai', 'error', 'Failed to start embeddings: ' + error.message);
+                btnEmbeddings.disabled = false;
+            }
+        }
+
+        async function estimateEmbeddings() {
+            const threshold = parseFloat(document.getElementById('similarity-threshold').value) || 0.85;
+            const btnEstimate = document.getElementById('btn-estimate');
+            const resultsDiv = document.getElementById('estimate-results');
+
+            btnEstimate.disabled = true;
+            btnEstimate.textContent = '⏱️ Estimating...';
+            resultsDiv.style.display = 'none';
+
+            // Show processing status
+            showStatus('ai', 'running', 'Analyzing sample images to estimate processing time...');
+
+            try {
+                const response = await fetch('/api/embeddings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        similarity_threshold: threshold, 
+                        estimate: true,
+                        estimate_sample: 30
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const est = data.estimates;
+                    const throughput = data.throughput;
+
+                    let html = `
+                        <strong>📊 Estimation Results (based on ${data.sample_size} sample images):</strong><br>
+                        <div style="margin-top: 0.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem;">
+                            <div>
+                                <strong>Total Images:</strong> ${data.total_images.toLocaleString()}<br>
+                                <strong>Processing Speed:</strong> ${throughput.images_per_second} img/sec
+                            </div>
+                            <div>
+                                <strong>Estimated Time:</strong><br>
+                                • Embeddings: ~${est.embedding_minutes} min<br>
+                                • Grouping: ~${est.grouping_minutes} min<br>
+                                • <strong>Total: ~${est.total_minutes} min (${est.total_hours} hrs)</strong>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #666;">
+                            ${data.note}
+                        </div>
+                    `;
+
+                    resultsDiv.innerHTML = html;
+                    resultsDiv.style.display = 'block';
+
+                    showStatus('ai', 'success', `Estimation complete: ~${est.total_minutes} minutes for ${data.total_images} images`);
+                } else {
+                    showStatus('ai', 'error', data.error || 'Estimation failed');
+                }
+
+            } catch (error) {
+                showStatus('ai', 'error', 'Failed to estimate: ' + error.message);
+            } finally {
+                btnEstimate.disabled = false;
+                btnEstimate.textContent = '⏱️ Estimate Time';
+                // Hide status after a delay if successful
+                if (document.getElementById('processing-status-ai').classList.contains('success')) {
+                    setTimeout(() => {
+                        const statusDiv = document.getElementById('processing-status-ai');
+                        statusDiv.classList.remove('active');
+                    }, 3000);
+                }
+            }
+        }
+
+        function startStatusPolling(tabType) {
+            if (statusCheckInterval) return;
+
+            statusCheckInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/status');
+                    const status = await response.json();
+
+                    if (status.running) {
+                        updateProgressMessage(`${status.stage}: ${status.message}`);
+                        showStatus(tabType, 'running', `${status.stage}: ${status.message}`);
+                    } else {
+                        hideProgressOverlay();
+                        showStatus(tabType, 'success', status.message);
+                        clearInterval(statusCheckInterval);
+                        statusCheckInterval = null;
+
+                        // Re-enable buttons
+                        document.getElementById('btn-scan').disabled = false;
+                        document.getElementById('btn-embeddings').disabled = false;
+
+                        // Reload groups
+                        await loadGroups();
+
+                        // Auto-switch to the relevant tab
+                        if (tabType === 'scan' && scanDuplicates) {
+                            switchTab('scanner');
+                        } else if (tabType === 'ai' && groups && groups.length > 0) {
+                            switchTab('ai');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Status check failed:', error);
+                }
+            }, 1000);
+        }
+
+        function showStatus(tabType, type, message) {
+            const statusId = tabType === 'ai' ? 'processing-status-ai' : 'processing-status-scan';
+            const statusDiv = document.getElementById(statusId);
+            statusDiv.className = `processing-status active ${type}`;
+
+            // Clear existing content
+            statusDiv.innerHTML = '';
+
+            // Add appropriate icon/spinner
+            if (type === 'running') {
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner';
+                statusDiv.appendChild(spinner);
+            } else if (type === 'success') {
+                const icon = document.createElement('span');
+                icon.className = 'status-icon';
+                icon.textContent = '✅';
+                statusDiv.appendChild(icon);
+            } else if (type === 'error') {
+                const icon = document.createElement('span');
+                icon.className = 'status-icon';
+                icon.textContent = '❌';
+                statusDiv.appendChild(icon);
+            }
+
+            // Add message
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            statusDiv.appendChild(messageSpan);
+        }
+
+        async function loadGroups(isInitialLoad = false) {
+            try {
+                console.log('Loading groups...');
+
+                // Load categorized AI groups
+                const response = await fetch('/api/ai-groups-categorized');
+                const data = await response.json();
+
+                // Store categorized groups
+                aiGroupsOverlapExact = data.overlaps_exact || [];
+                aiGroupsOverlapPerceptual = data.overlaps_perceptual || [];
+                aiGroupsNewDiscoveries = data.new_discoveries || [];
+
+                // Keep old 'groups' variable for compatibility with existing code
+                groups = [...aiGroupsOverlapExact, ...aiGroupsOverlapPerceptual, ...aiGroupsNewDiscoveries];
+
+                console.log(`AI groups: ${data.counts.overlaps_exact} overlap exact, ${data.counts.overlaps_perceptual} overlap perceptual, ${data.counts.new_discoveries} new discoveries`);
+
+                // Load scan duplicates (best-effort)
+                try {
+                    const dupResp = await fetch('/api/scan-duplicates');
+                    if (dupResp.ok) {
+                        scanDuplicates = await dupResp.json();
+                        console.log('Loaded scan duplicates:', scanDuplicates);
+
+                        // Filter out perceptual duplicates that are already in exact matches
+                        if (scanDuplicates.exact_groups && scanDuplicates.perceptual_groups) {
+                            const exactFiles = new Set();
+                            scanDuplicates.exact_groups.forEach(group => {
+                                group.files.forEach(file => exactFiles.add(file));
+                            });
+
+                            // Filter perceptual groups to exclude exact matches
+                            scanDuplicates.perceptual_groups = scanDuplicates.perceptual_groups
+                                .map(group => ({
+                                    ...group,
+                                    files: group.files.filter(file => !exactFiles.has(file))
+                                }))
+                                .filter(group => group.files.length > 1); // Keep only groups with 2+ files
+                        }
+                    }
+                } catch (e) {
+                    scanDuplicates = null;
+                }
+
+                // Load scan data for file sizes
+                try {
+                    const scanResp = await fetch('/api/scan-data');
+                    if (scanResp.ok) {
+                        const scanArray = await scanResp.json();
+                        scanDataMap = {};
+                        scanArray.forEach(item => {
+                            scanDataMap[item.file_path] = item;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Failed to load scan data:', e);
+                }
+
+                // Auto-select exact duplicates by default, but not perceptual
+                if (scanDuplicates?.exact_groups && scanDuplicates.exact_groups.length > 0) {
+                    selectAllExactDefault();
+                }
+
+                console.log('About to call render()');
+                updateStats(0.85);
+                render();
+                console.log('Render completed');
+
+                // On initial page load: default to AI tab if results exist, else Scanner
+                if (isInitialLoad) {
+                    if (groups.length > 0) {
+                        switchTab('ai');
+                    } else {
+                        switchTab('scanner');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load groups:', error);
+                console.error('Error stack:', error.stack);
+                document.getElementById('scanner-results').innerHTML = 
+                    '<div class="empty-state">Failed to load: ' + error.message + '</div>';
+                document.getElementById('ai-results').innerHTML = 
+                    '<div class="empty-state">Failed to load: ' + error.message + '</div>';
+            }
+        }
+
+        function updateStats(threshold) {
+            const total = groups.length;
+            const reviewed = groups.filter(g => g.reviewed).length;
+            const feedbackCount = groups.filter(g => g.action === 'not_similar').length;
+
+            const scanExact = scanDuplicates?.exact_groups?.length || 0;
+            const scanPerceptual = scanDuplicates?.perceptual_groups?.length || 0;
+
+            let statsText = '';
+            if (scanExact > 0 || scanPerceptual > 0) {
+                statsText = `Scanner: ${scanExact} exact + ${scanPerceptual} perceptual groups`;
+            }
+            if (total > 0) {
+                if (statsText) statsText += ' • ';
+                statsText += `AI: ${total} groups (${reviewed} reviewed)`;
+            }
+            if (!statsText) {
+                statsText = 'No results yet - run scanner first';
+            }
+
+            document.getElementById('stats-total').textContent = statsText;
+            document.getElementById('stats-threshold').textContent = 
+                threshold ? `Threshold: ${(threshold * 100).toFixed(0)}%` : '';
+
+            if (feedbackCount > 0) {
+                document.getElementById('stats-feedback').textContent = `${feedbackCount} feedback items`;
+            } else {
+                document.getElementById('stats-feedback').textContent = '';
+            }
+        }
+
+
+
+        function toggleImageExpand(event) {
+            const img = event.target;
+            img.classList.toggle('expanded');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function toggleSection(type) {
+            collapsedSections[type] = !collapsedSections[type];
+            render();
+        }
+
+        function calculateTotalSavings(groupType) {
+            let totalFiles = 0;
+            let totalBytes = 0;
+
+            const groupsList = groupType === 'exact' ? 
+                scanDuplicates?.exact_groups : scanDuplicates?.perceptual_groups;
+
+            if (!groupsList) return { files: 0, bytes: 0 };
+
+            groupsList.forEach((group, idx) => {
+                const files = group.files;
+                // Keep oldest, delete the rest
+                const filesWithDates = files.map(path => ({
+                    path,
+                    // Use photo_date (EXIF capture date) if available, fall back to created_at (file creation)
+                    date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99',
+                    size: scanDataMap[path]?.file_size || 0
+                }));
+                filesWithDates.sort((a, b) => a.date.localeCompare(b.date));
+
+                // Sum up all files except the oldest
+                for (let i = 1; i < filesWithDates.length; i++) {
+                    totalFiles++;
+                    totalBytes += filesWithDates[i].size;
+                }
+            });
+
+            return { files: totalFiles, bytes: totalBytes };
+        }
+
+        function getGroupSize(files) {
+            return files.reduce((sum, file) => {
+                const path = typeof file === 'string' ? file : file.path;
+                return sum + (scanDataMap[path]?.file_size || 0);
+            }, 0);
+        }
+
+        function switchTab(tab) {
+            // Update workflow tab buttons
+            document.querySelectorAll('.workflow-tab').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            if (tab === 'scanner') {
+                document.getElementById('tab-scanner').classList.add('active');
+                document.getElementById('scanner-tab').classList.add('active');
+                currentTab = 'scan';
+            } else if (tab === 'ai') {
+                document.getElementById('tab-ai').classList.add('active');
+                document.getElementById('ai-tab').classList.add('active');
+                currentTab = 'ai';
+            }
+        }
+
+        /**
+         * Unified section rendering function for all duplicate group types
+         * @param {Object} config - Section configuration
+         * @param {string} config.sectionKey - Unique key for section (e.g., 'exact', 'perceptual', 'new_ai_discoveries')
+         * @param {string} config.title - Section title
+         * @param {string} config.emoji - Emoji for section header
+         * @param {string} config.color - Background color/gradient for header
+         * @param {Array} config.groups - Array of groups to render
+         * @param {string} config.type - Group type: 'exact' | 'perceptual' | 'ai'
+         * @param {string} config.tipMessage - Tip message HTML
+         * @param {string} config.tipBackground - Background color for tip box
+         * @param {string} config.tipTextColor - Text color for tip box
+         * @param {string} config.buttonColor - Color for action buttons
+         * @param {string} config.savingsDisplayId - ID for savings display span
+         * @param {Function} config.selectAllFn - Function name to call for "Select All"
+         * @param {Function} config.deselectAllFn - Function name to call for "Clear"
+         * @param {Function} config.deleteFn - Function name to call for "Delete Selected"
+         * @param {Function} config.renderGroupFn - Function to render individual groups
+         */
+        function renderUnifiedSection(config) {
+            const {
+                sectionKey,
+                title,
+                emoji,
+                color,
+                groups,
+                type,
+                tipMessage,
+                tipBackground,
+                tipTextColor,
+                buttonColor,
+                savingsDisplayId,
+                selectAllFn,
+                deselectAllFn,
+                deleteFn,
+                renderGroupFn
+            } = config;
+
+            if (!groups || groups.length === 0) return '';
+
+            const isCollapsed = collapsedSections[sectionKey] || false;
+
+            // Calculate potential savings
+            let totalPotentialFiles = 0;
+            let totalPotentialSize = 0;
+
+            if (type === 'ai') {
+                // For AI groups, count all but first in each group
+                groups.forEach(group => {
+                    if (group.files && group.files.length > 1) {
+                        for (let i = 1; i < group.files.length; i++) {
+                            totalPotentialFiles++;
+                            const filePath = typeof group.files[i] === 'string' ? group.files[i] : group.files[i].path;
+                            totalPotentialSize += scanDataMap[filePath]?.file_size || 0;
+                        }
+                    }
+                });
+            } else {
+                // For exact/perceptual groups, keep oldest, count rest
+                groups.forEach(group => {
+                    const filesWithDates = group.files.map(path => ({
+                        path,
+                        date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99',
+                        size: scanDataMap[path]?.file_size || 0
+                    }));
+                    filesWithDates.sort((a, b) => a.date.localeCompare(b.date));
+                    // Sum all except oldest
+                    for (let i = 1; i < filesWithDates.length; i++) {
+                        totalPotentialFiles++;
+                        totalPotentialSize += filesWithDates[i].size;
+                    }
+                });
+            }
+
+            const fileLabel = type === 'ai' ? 'potentially similar files' : 'files can be deleted';
+
+            let html = `
+                <div class="type-section" style="margin-bottom: 1.5rem;">
+                    <div class="type-header ${isCollapsed ? 'collapsed' : ''}" style="background: ${color};" onclick="toggleSection('${sectionKey}')">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span style="font-size: 1.5rem;">${isCollapsed ? '▶' : '▼'}</span>
+                                <div>
+                                    <h2 style="margin: 0; font-size: 1.25rem;">${emoji} ${title}</h2>
+                                    <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+                                        ${groups.length} groups • ${totalPotentialFiles} ${fileLabel}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.125rem; font-weight: 600;">💾 ${formatBytes(totalPotentialSize)}</div>
+                            <div style="font-size: 0.75rem; opacity: 0.9;">Potential savings</div>
+                        </div>
+                    </div>
+                    <div class="type-content ${isCollapsed ? 'collapsed' : ''}">
+                        <div style="background: white; padding: 1rem; border-radius: 0 0 12px 12px;">
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: ${tipBackground}; border-radius: 6px; color: ${tipTextColor}; font-size: 0.875rem;">
+                                ${tipMessage}
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
+                                <button class="btn btn-keep" onclick="event.stopPropagation(); ${selectAllFn}()" style="background: ${buttonColor}; color: white;">
+                                    ✓ Select All
+                                </button>
+                                <button class="btn btn-keep" onclick="event.stopPropagation(); ${deselectAllFn}()" style="background: #8e8e93; color: white;">
+                                    ✗ Clear
+                                </button>
+                                <button class="btn btn-delete" onclick="event.stopPropagation(); ${deleteFn}()" style="background: ${buttonColor}; color: white; margin-left: auto;">
+                                    � Add Selected to Duplicates Album
+                                </button>
+                                <span id="${savingsDisplayId}" style="font-size: 0.875rem; color: ${buttonColor}; font-weight: 600; white-space: nowrap;"></span>
+                            </div>
+                            <div class="groups-grid">
+            `;
+
+            // Render groups using provided function
+            groups.forEach((group, idx) => {
+                html += renderGroupFn(group, idx);
+            });
+
+            html += '</div></div></div></div>';
+
+            return html;
+        }
+
+        function render() {
+            const scannerContainer = document.getElementById('scanner-results');
+            const aiContainer = document.getElementById('ai-results');
+
+            const hasScanData = scanDuplicates && 
+                ((scanDuplicates.exact_groups && scanDuplicates.exact_groups.length > 0) ||
+                 (scanDuplicates.perceptual_groups && scanDuplicates.perceptual_groups.length > 0));
+            const hasAIData = groups && groups.length > 0;
+
+            // Update tab badges
+            if (hasScanData) {
+                const scanCount = (scanDuplicates.exact_groups?.length || 0) + (scanDuplicates.perceptual_groups?.length || 0);
+                document.getElementById('scanner-count').textContent = scanCount + ' groups';
+            } else {
+                document.getElementById('scanner-count').textContent = 'Step 1';
+            }
+
+            const aiTab = document.getElementById('tab-ai');
+            if (hasAIData) {
+                aiTab.disabled = false;
+                document.getElementById('ai-count').textContent = groups.length + ' groups';
+            } else {
+                document.getElementById('ai-count').textContent = 'Step 2';
+            }
+
+            // === Scanner results ===
+            let scanHtml = '';
+
+            if (!hasScanData) {
+                scanHtml = '<div class="empty-state"><h3>📊 No scanner results yet</h3><p>Click "Start Scan" above to find exact and perceptual duplicates.</p></div>';
+            } else {
+                // Exact matches section
+                if (scanDuplicates.exact_groups && scanDuplicates.exact_groups.length > 0) {
+                    scanHtml += renderUnifiedSection({
+                        sectionKey: 'exact',
+                        title: 'Exact Duplicates (MD5 Hash)',
+                        emoji: '🟢',
+                        color: 'linear-gradient(135deg, #34c759 0%, #30d158 100%)',
+                        groups: scanDuplicates.exact_groups,
+                        type: 'exact',
+                        tipMessage: '💡 <strong>Tip:</strong> Check groups to include in batch delete. Click thumbnails to toggle individual images. Default keeps oldest photo.',
+                        tipBackground: '#e8f5e9',
+                        tipTextColor: '#2e7d32',
+                        buttonColor: '#34c759',
+                        savingsDisplayId: 'exact-savings-display',
+                        selectAllFn: 'selectAllExactDefault',
+                        deselectAllFn: 'deselectAllExact',
+                        deleteFn: 'batchDeleteExactSelected',
+                        renderGroupFn: (group, idx) => renderCompactGroup(group, idx, 'exact', '#34c759')
+                    });
+                }
+
+                // Perceptual matches section
+                if (scanDuplicates.perceptual_groups && scanDuplicates.perceptual_groups.length > 0) {
+                    scanHtml += renderUnifiedSection({
+                        sectionKey: 'perceptual',
+                        title: 'Perceptual Duplicates (Review Required)',
+                        emoji: '🟠',
+                        color: 'linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%)',
+                        groups: scanDuplicates.perceptual_groups,
+                        type: 'perceptual',
+                        tipMessage: '💡 <strong>Tip:</strong> Check groups to include in batch delete. Click thumbnails to toggle individual images. Default keeps oldest photo.',
+                        tipBackground: '#fff3cd',
+                        tipTextColor: '#856404',
+                        buttonColor: '#ff9500',
+                        savingsDisplayId: 'perceptual-savings-display',
+                        selectAllFn: 'selectAllPerceptualDefault',
+                        deselectAllFn: 'deselectAllPerceptual',
+                        deleteFn: 'batchDeletePerceptualSelected',
+                        renderGroupFn: (group, idx) => renderPerceptualGroup(group, idx, '#ff9500')
+                    });
+                }
+
+                // Info about what goes to AI
+                scanHtml += '<div class="group-card" style="background: #f0f8ff; border-left: 4px solid #007aff;">';
+                scanHtml += '<h3 style="margin: 0 0 0.5rem 0; color: #007aff;">ℹ️ About AI Embeddings</h3>';
+                scanHtml += '<p style="margin: 0; color: #1d1d1f;">When you run "Generate Embeddings", the AI analyzes <strong>all scanned photos</strong> to find similar images based on visual content.</p>';
+                scanHtml += '</div>';
+            }
+
+            scannerContainer.innerHTML = scanHtml;
+
+            // === AI results ===
+            let aiHtml = '';
+
+            if (!hasAIData) {
+                aiHtml = '<div class="empty-state"><h3>🧠 No AI results yet</h3><p>Run "Generate Embeddings" after scanning to find AI-detected similar groups.</p></div>';
+            } else {
+                // New AI Discoveries
+                aiHtml += renderUnifiedSection({
+                    sectionKey: 'new_ai_discoveries',
+                    title: 'New AI Discoveries',
+                    emoji: '🔴',
+                    color: 'linear-gradient(135deg, #c41e3a 0%, #8b0000 100%)',
+                    groups: aiGroupsNewDiscoveries,
+                    type: 'ai',
+                    tipMessage: '💡 These AI groups contain images <strong>not found in exact or perceptual duplicates</strong>. These are truly new discoveries based on visual content analysis.',
+                    tipBackground: '#f5f5f7',
+                    tipTextColor: '#1d1d1f',
+                    buttonColor: '#c41e3a',
+                    savingsDisplayId: 'ai-new-savings-display',
+                    selectAllFn: 'selectAllAIDefault',
+                    deselectAllFn: 'deselectAllAI',
+                    deleteFn: 'batchDeleteAISelected',
+                    renderGroupFn: (group) => renderAIGroup(group, group.group_id)
+                });
+
+                // Overlaps with Exact
+                aiHtml += renderUnifiedSection({
+                    sectionKey: 'overlaps_with_exact_matches',
+                    title: 'Overlaps with Exact Matches',
+                    emoji: '🟢',
+                    color: 'linear-gradient(135deg, #34c759 0%, #30d158 100%)',
+                    groups: aiGroupsOverlapExact,
+                    type: 'ai',
+                    tipMessage: '💡 These AI groups contain images that are also in <strong>Exact Duplicate</strong> groups.',
+                    tipBackground: '#f5f5f7',
+                    tipTextColor: '#1d1d1f',
+                    buttonColor: '#34c759',
+                    savingsDisplayId: 'ai-exact-savings-display',
+                    selectAllFn: 'selectAllAIDefault',
+                    deselectAllFn: 'deselectAllAI',
+                    deleteFn: 'batchDeleteAISelected',
+                    renderGroupFn: (group) => renderAIGroup(group, group.group_id)
+                });
+
+                // Overlaps with Perceptual
+                aiHtml += renderUnifiedSection({
+                    sectionKey: 'overlaps_with_perceptual_matches',
+                    title: 'Overlaps with Perceptual Matches',
+                    emoji: '🟠',
+                    color: 'linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%)',
+                    groups: aiGroupsOverlapPerceptual,
+                    type: 'ai',
+                    tipMessage: '💡 These AI groups contain images that are also in <strong>Perceptual Duplicate</strong> groups.',
+                    tipBackground: '#f5f5f7',
+                    tipTextColor: '#1d1d1f',
+                    buttonColor: '#ff9500',
+                    savingsDisplayId: 'ai-perceptual-savings-display',
+                    selectAllFn: 'selectAllAIDefault',
+                    deselectAllFn: 'deselectAllAI',
+                    deleteFn: 'batchDeleteAISelected',
+                    renderGroupFn: (group) => renderAIGroup(group, group.group_id)
+                });
+
+                // Summary card
+                aiHtml += '<div class="group-card" style="background: #f0f8ff; border-left: 4px solid #007aff;">';
+                aiHtml += '<h3 style="margin: 0 0 0.5rem 0; color: #007aff;">📊 AI Analysis Summary</h3>';
+                aiHtml += '<p style="margin: 0 0 0.5rem 0; color: #1d1d1f;">';
+                aiHtml += '<strong>' + aiGroupsOverlapExact.length + '</strong> groups overlap with exact matches<br>';
+                aiHtml += '<strong>' + aiGroupsOverlapPerceptual.length + '</strong> groups overlap with perceptual matches<br>';
+                aiHtml += '<strong>' + aiGroupsNewDiscoveries.length + '</strong> groups are new discoveries';
+                aiHtml += '</p>';
+                aiHtml += '<p style="margin: 0; font-size: 0.875rem; color: #86868b;">Total: ' + groups.length + ' AI-detected similarity groups</p>';
+                aiHtml += '</div>';
+            }
+
+            aiContainer.innerHTML = aiHtml;
+
+            // Update disk savings displays
+            updateSavingsDisplays();
+        }
+
+        function updateSavingsDisplays() {
+            // Calculate exact duplicates savings
+            let exactFiles = 0;
+            let exactBytes = 0;
+            activeExactGroups.forEach(groupIdx => {
+                const selected = selectedExactImages.get(groupIdx);
+                const group = scanDuplicates?.exact_groups?.[groupIdx];
+                if (group && selected) {
+                    selected.forEach(imgIdx => {
+                        exactFiles++;
+                        exactBytes += scanDataMap[group.files[imgIdx]]?.file_size || 0;
+                    });
+                }
+            });
+
+            // Calculate perceptual duplicates savings
+            let perceptualFiles = 0;
+            let perceptualBytes = 0;
+            activePerceptualGroups.forEach(groupIdx => {
+                const selected = selectedPerceptualImages.get(groupIdx);
+                const group = scanDuplicates?.perceptual_groups?.[groupIdx];
+                if (group && selected) {
+                    selected.forEach(imgIdx => {
+                        perceptualFiles++;
+                        perceptualBytes += scanDataMap[group.files[imgIdx]]?.file_size || 0;
+                    });
+                }
+            });
+
+            // Calculate AI groups savings (all groups combined)
+            let aiFiles = 0;
+            let aiBytes = 0;
+            activeAIGroups.forEach(groupId => {
+                const selected = selectedImages.get(groupId);
+                const group = groups.find(g => g.group_id === groupId);
+                if (group && selected) {
+                    selected.forEach(imgIdx => {
+                        aiFiles++;
+                        aiBytes += scanDataMap[group.files[imgIdx].path]?.file_size || 0;
+                    });
+                }
+            });
+
+            // Update displays
+            const exactDisplay = document.getElementById('exact-savings-display');
+            if (exactDisplay) {
+                exactDisplay.textContent = `(${exactFiles} files • ${formatBytes(exactBytes)})`;
+            }
+
+            const perceptualDisplay = document.getElementById('perceptual-savings-display');
+            if (perceptualDisplay) {
+                perceptualDisplay.textContent = `(${perceptualFiles} files • ${formatBytes(perceptualBytes)})`;
+            }
+
+            // Update all three AI section displays with the same values
+            const aiNewDisplay = document.getElementById('ai-new-savings-display');
+            if (aiNewDisplay) {
+                aiNewDisplay.textContent = `(${aiFiles} files • ${formatBytes(aiBytes)})`;
+            }
+
+            const aiExactDisplay = document.getElementById('ai-exact-savings-display');
+            if (aiExactDisplay) {
+                aiExactDisplay.textContent = `(${aiFiles} files • ${formatBytes(aiBytes)})`;
+            }
+
+            const aiPerceptualDisplay = document.getElementById('ai-perceptual-savings-display');
+            if (aiPerceptualDisplay) {
+                aiPerceptualDisplay.textContent = `(${aiFiles} files • ${formatBytes(aiBytes)})`;
+            }
+        }
+
+        function getSortedFilesWithInfo(files) {
+            const filesWithInfo = files.map((path, idx) => ({
+                path,
+                originalIdx: idx,
+                date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+            }));
+            filesWithInfo.sort((a, b) => a.date.localeCompare(b.date));
+            return filesWithInfo;
+        }
+
+        // Unified rendering function for both exact and perceptual duplicate groups
+        // ========== UNIFIED SECTION RENDERING SYSTEM ==========
+
+        // Unified function to render any duplicate group (exact, perceptual, or AI)
+        function renderUnifiedGroup(config) {
+            const { group, index, groupId, type, themeColor, showSimilarity } = config;
+            const files = type === 'ai' ? group.files.map(f => f.path) : group.files;
+            const id = groupId !== undefined ? groupId : index;
+
+            // Get type-specific state
+            let isActive, selected, toggleImageFunc;
+            if (type === 'ai') {
+                isActive = activeAIGroups.has(id);
+                selected = isActive ? (selectedImages.get(id) || new Set()) : new Set();
+                toggleImageFunc = `toggleAIImage(${id}, INDEX)`;
+            } else if (type === 'exact') {
+                isActive = activeExactGroups.has(index);
+                selected = isActive ? (selectedExactImages.get(index) || new Set()) : new Set();
+                toggleImageFunc = `toggleExactImage(${index}, INDEX)`;
+            } else { // perceptual
+                isActive = activePerceptualGroups.has(index);
+                selected = isActive ? (selectedPerceptualImages.get(index) || new Set()) : new Set();
+                toggleImageFunc = `togglePerceptualImage(${index}, INDEX)`;
+            }
+
+            const totalSize = getGroupSize(files);
+
+            // For exact/perceptual, sort by date and mark oldest
+            let filesWithInfo;
+            let oldestIdx = null;
+            if (type !== 'ai') {
+                filesWithInfo = files.map((path, idx) => ({
+                    path,
+                    originalIdx: idx,
+                    date: scanDataMap[path]?.photo_date || scanDataMap[path]?.created_at || '9999-99-99'
+                }));
+                filesWithInfo.sort((a, b) => a.date.localeCompare(b.date));
+                oldestIdx = filesWithInfo[0].originalIdx;
+            }
+
+            // Calculate thumbnail size
+            const thumbSize = files.length === 2 ? '80px' : '70px';
+
+            // Calculate selection stats
+            const selectedSize = Array.from(selected).reduce((sum, idx) => 
+                sum + (scanDataMap[files[idx]]?.file_size || 0), 0);
+            const hasSelection = selected.size > 0;
+
+            let html = '<div class="mini-group-card">';
+
+            // Group header with checkbox
+            html += '<div class="mini-group-header" style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">';
+            html += '<input type="checkbox" ' + (isActive ? 'checked' : '') + ' ';
+            html += 'onclick="toggleGroupActive(\'' + type + '\', ' + id + ')" ';
+            html += 'style="width: 18px; height: 18px; cursor: pointer;" ';
+            html += 'title="' + (isActive ? 'Uncheck to exclude from batch delete' : 'Check to include in batch delete') + '">';
+            html += '<span style="font-weight: 600; color: #1d1d1f;">#' + (index + 1) + '</span>';
+            html += '<span class="similarity-badge" style="background: ' + themeColor + '; font-size: 0.625rem; padding: 0.25rem 0.5rem;">';
+            html += files.length;
+            html += '</span>';
+            if (showSimilarity && group.avg_similarity) {
+                html += '<span style="font-size: 0.625rem; color: #86868b; margin-left: auto;">' + (group.avg_similarity * 100).toFixed(1) + '% sim</span>';
+            }
+            html += '</div>';
+
+            // Thumbnail grid
+            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(' + thumbSize + ', 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">';
+
+            const itemsToRender = type === 'ai' ? group.files : filesWithInfo;
+            itemsToRender.forEach((item, arrayIdx) => {
+                const path = type === 'ai' ? item.path : item.path;
+                const fileIdx = type === 'ai' ? arrayIdx : item.originalIdx;
+                const isSelected = selected.has(fileIdx);
+                const isOldest = oldestIdx !== null && fileIdx === oldestIdx;
+                const willBeKept = !isSelected;
+
+                html += '<div style="position: relative;">';
+
+                // Image with border
+                html += '<img src="/api/image?path=' + encodeURIComponent(path) + '" ';
+                html += 'alt="thumb" ';
+                html += 'style="width: 100%; height: ' + thumbSize + '; object-fit: cover; border-radius: 4px; border: ' + (isSelected ? '2px solid #ff9500' : '2px solid #34c759') + '; position: relative; z-index: 1;">';
+
+                // Clickable overlay
+                html += '<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; cursor: pointer; z-index: 2;" ';
+                html += 'onclick="' + toggleImageFunc.replace('INDEX', fileIdx) + ';" ';
+                html += 'title="' + (willBeKept ? 'Click to select for deletion' : 'Click to keep') + '"></div>';
+
+                // Badge
+                if (willBeKept) {
+                    html += '<div style="position: absolute; top: 2px; left: 2px; background: #34c759; color: white; font-size: 0.625rem; padding: 2px 4px; border-radius: 3px; z-index: 3; font-weight: 600; pointer-events: none;">';
+                    html += isOldest ? 'KEEP ★' : 'KEEP';
+                    html += '</div>';
+                } else {
+                    html += '<div style="position: absolute; top: 2px; left: 2px; background: #ff9500; color: white; font-size: 0.625rem; padding: 2px 4px; border-radius: 3px; z-index: 3; font-weight: 600; pointer-events: none;">';
+                    html += 'DEL ✗';
+                    html += '</div>';
+                }
+
+                // View button
+                html += '<div style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.7); color: white; font-size: 0.625rem; padding: 2px 6px; border-radius: 3px; z-index: 3; cursor: pointer;" ';
+                html += 'onclick="event.stopPropagation(); openModal(\'' + path.replace(/'/g, "\\'") + '\', \'' + path.split('/').pop().replace(/'/g, "\\'") + '\', \'' + type + '\', ' + id + ');" ';
+                html += 'title="View full size">🔍</div>';
+
+                html += '</div>';
+            });
+            html += '</div>';
+
+            // Stats footer
+            html += '<div class="group-stats" style="margin-top: 0.5rem; display: flex; gap: 0.5rem; font-size: 0.75rem; color: #86868b;">';
+            html += '<span>📦 ' + formatBytes(totalSize) + '</span>';
+            if (hasSelection) {
+                html += '<span style="color: #ff3b30; font-weight: 600;">💾 Save ' + formatBytes(selectedSize) + '</span>';
+            }
+            html += '</div>';
+
+            html += '</div>';
+            return html;
+        }
+
+        // Legacy wrapper functions for backward compatibility
+        function renderDuplicateGroup(group, index, type, themeColor) {
+            return renderUnifiedGroup({ 
+                group, 
+                index, 
+                type, 
+                themeColor, 
+                showSimilarity: false 
+            });
+        }
+
+        function renderPerceptualGroup(group, index, color) {
+            return renderUnifiedGroup({ 
+                group, 
+                index, 
+                type: 'perceptual', 
+                themeColor: color, 
+                showSimilarity: false 
+            });
+        }
+
+        function renderCompactGroup(group, index, type, color) {
+            return renderUnifiedGroup({ 
+                group, 
+                index, 
+                type, 
+                themeColor: color, 
+                showSimilarity: false 
+            });
+        }
+
+        function renderAIGroup(group, index) {
+            return renderUnifiedGroup({ 
+                group, 
+                index, 
+                groupId: group.group_id,
+                type: 'ai', 
+                themeColor: '#007aff', 
+                showSimilarity: true 
+            });
+        }
+
+
+        async function addToDuplicatesAlbum(filePath) {
+            try {
+                const response = await fetch('/api/add-to-duplicates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_path: filePath })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Failed to add to Duplicates album:', error);
+                return false;
+            }
+        }
+
+        async function openDuplicatesAlbum() {
+            try {
+                await fetch('/api/open-duplicates-album', { method: 'POST' });
+            } catch (error) {
+                console.error('Failed to open album:', error);
+            }
+        }
+
+        function toggleImageSelection(groupId, imageIndex) {
+            if (!selectedImages.has(groupId)) {
+                selectedImages.set(groupId, new Set());
+            }
+
+            const selected = selectedImages.get(groupId);
+            if (selected.has(imageIndex)) {
+                selected.delete(imageIndex);
+            } else {
+                selected.add(imageIndex);
+            }
+
+            render();
+        }
+
+        async function handleAction(groupId, action) {
+            try {
+                const response = await fetch('/api/review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        group_id: groupId, 
+                        action: action 
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+
+                    // Update local state
+                    const group = groups.find(g => g.group_id === groupId);
+                    if (group) {
+                        group.reviewed = true;
+                        group.action = action;
+                        if (result.deleted_count) {
+                            group.deleted_count = result.deleted_count;
+                        }
+                    }
+
+                    // Clear selection
+                    selectedImages.delete(groupId);
+
+                    updateStats(0.85);
+                    render();
+
+                    if (action === 'not_similar') {
+                        alert('✓ Feedback recorded! AI will learn these images are not similar.');
+                    } else if (result.deleted_count) {
+                        alert(`✓ ${result.deleted_count} photo(s) deleted from Photos Library`);
+                    }
+                } else {
+                    alert('Failed to process action');
+                }
+            } catch (error) {
+                console.error('Action failed:', error);
+                alert('Failed to process action');
+            }
+        }
+
+        async function handleDeleteSelected(groupId) {
+            const selected = selectedImages.get(groupId);
+            if (!selected || selected.size === 0) return;
+
+            const count = selected.size;
+            if (!confirm(`Delete ${count} selected photo(s) from Photos Library?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        group_id: groupId, 
+                        action: 'delete_selected',
+                        delete_indices: Array.from(selected)
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+
+                    const group = groups.find(g => g.group_id === groupId);
+                    if (group) {
+                        group.reviewed = true;
+                        group.action = 'delete_selected';
+                        group.deleted_count = result.deleted_count;
+                    }
+
+                    selectedImages.delete(groupId);
+                    updateStats(0.85);
+                    render();
+
+                    alert(`✓ ${result.deleted_count} photo(s) deleted from Photos Library`);
+                } else {
+                    alert('Failed to delete photos');
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                alert('Failed to delete photos');
+            }
+        }
+
+        loadGroups(true);
+    </script>
+</body>
+</html>

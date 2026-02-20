@@ -15,6 +15,14 @@ python -m src.scanner.main .cache/photos_local \
   --cache-file .cache/scan_cache.json
   ```
 
+And for demo:
+```bash
+python -m src.scanner.main /Users/dnadkarn/demo_photos \
+  --output scan_results_demo.json \
+  --duplicates-output scan_duplicates_demo.json \
+  --cache-file .cache_demo/scan_cache.json
+  ```
+
 ---
 ## Local App Server, Without inference servers
 

@@ -7,7 +7,7 @@ import sys
 
 import uvicorn
 
-from .app_v5 import app, load_data
+from .app_v6 import app, load_data, get_paths
 
 
 def setup_logging(verbose: bool = False):
@@ -76,18 +76,32 @@ def main():
     setup_logging(args.verbose)
     logger = logging.getLogger(__name__)
     
-    # Validate files
-    if not args.similar_groups.exists():
-        logger.error(f"Similar groups file not found: {args.similar_groups}")
+    # Resolve file paths: use get_paths() with the correct mode so the same
+    # logic lives in one place (app_v6.get_paths) rather than being duplicated here.
+    mode = "demo" if args.demo else "main"
+    p = get_paths(mode)
+
+    scan_results_path   = p.scan_results
+    similar_groups_path = p.groups_file
+    embeddings_dir_path = p.embeddings_dir
+    path_mapping_path   = (p.scan_cache.parent / "path_mapping.json")
+    path_mapping_path   = path_mapping_path if path_mapping_path.exists() else None
+
+    if args.demo:
+        logger.info(f"Demo mode: using {p.scan_results} and {p.embeddings_dir}/")
+    
+    # Validate files (only require similar_groups for main mode; demo may not have them yet)
+    if not args.demo and not similar_groups_path.exists():
+        logger.error(f"Similar groups file not found: {similar_groups_path}")
         logger.error("Run embedding generation first: python -m src.embedding.main ...")
         sys.exit(1)
     
     # Load data into app (support demo mode)
     load_data(
-        args.scan_results,
-        args.similar_groups,
-        args.embeddings_dir,
-        args.path_mapping if args.path_mapping.exists() else None,
+        scan_results_path,
+        similar_groups_path,
+        embeddings_dir_path,
+        path_mapping_path,
         is_demo=args.demo,
     )
     
