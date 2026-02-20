@@ -1,10 +1,843 @@
 {
-  "scan_results": "scan_results_demo.json",
+  "scan_results": "scan_for_embeddings.json",
   "photos_source": "directory",
   "used_applescript": false,
   "max_distance": 5,
   "md5_mode": "on-demand",
-  "image_count": 100,
-  "exact_groups": [],
-  "perceptual_groups": []
+  "image_count": 1970,
+  "exact_groups": [
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CE3A2D10-EC9E-46CE-BECD-3753E4B61375.jpeg",
+        ".cache/photos_local/5E344B07-46D2-4460-B33E-E4FF0911EE0E.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/E697B235-93BF-4CD6-8D23-AA539F78A8A0.jpeg",
+        ".cache/photos_local/3D9B4E99-8E79-40D1-80F1-3CAE6EF24966.jpeg",
+        ".cache/photos_local/duplicates/3D9B4E99-8E79-40D1-80F1-3CAE6EF24966.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/63522FDF-1058-4E2D-9FD1-C7394322F8AB.jpeg",
+        ".cache/photos_local/4B7CD3CC-6B73-4A26-BB2A-4943DC111EC8.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/45C549F2-97E0-4B56-B92D-1A76838A50EB.jpeg",
+        ".cache/photos_local/9F4A14C7-E9BC-43C5-99A4-46A914922A35.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DD070D30-60D8-442E-A19D-AA377547B5E6.jpeg",
+        ".cache/photos_local/3C252FC0-470B-46FE-BA9B-46504F761E66.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/9CFCB082-F663-4705-9FA6-C99DA2515893.jpeg",
+        ".cache/photos_local/F571B8B1-77BC-4ACE-8674-82ACAE27CBFF.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/5080F375-C2CE-4C2E-8254-21796BDA8886.jpeg",
+        ".cache/photos_local/2D013B8D-CA7C-475B-8181-1FD430B5520F.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/55320FBC-25A5-474D-A7A5-431FF5C3E9FD.jpeg",
+        ".cache/photos_local/7256192D-AA79-488B-A524-75ECC00073E6.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/FFA0DB3F-201F-49A8-AB4D-07FC5F3577E6.jpeg",
+        ".cache/photos_local/8E60B39E-330D-42C8-A032-AEF34AA50F48.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CD4F352D-FEF4-4112-AD5A-957EE855FEB4.jpeg",
+        ".cache/photos_local/83C79B02-A3CC-43CC-96E2-2A20F0FEB0CB.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/30237BFE-952E-4876-A249-BCC4EC3071B3.jpeg",
+        ".cache/photos_local/6AFD50AD-4E36-4964-A5BA-355045D0BFC6.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/98731873-DF5C-46C5-92DC-4E81429EFCC1.jpeg",
+        ".cache/photos_local/170CCAB2-B33C-448F-8F75-5E7CBACBEE38.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E1E211A6-A3BF-4DDE-AC28-992D3429B8E5.jpeg",
+        ".cache/photos_local/C876FD58-E43A-42D0-A96B-4AF2732D5497.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A0061C7C-2906-4A95-A896-F8A0F7051500.jpeg",
+        ".cache/photos_local/20F51D97-2E5C-4FDC-9B0E-73E971B526CC.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4E48703A-7C64-47B0-8187-A9672AF58836.jpeg",
+        ".cache/photos_local/2684BAC9-0DE6-4EC7-AB45-E65A28CDE98D.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C92B348F-3DF2-435A-8F8D-BA08AD33C5BE.jpeg",
+        ".cache/photos_local/FBFBFE0A-585B-4132-A438-0439575A2B4E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/0B3EAC63-CDD4-432D-85CD-109BA0F577B5.jpeg",
+        ".cache/photos_local/D4D29132-4261-44D5-A20D-F2B4D20D7791.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/991EF780-8027-4DF8-9588-6F0400F101AF.jpeg",
+        ".cache/photos_local/09D9A71D-CA97-428C-A519-D9AEA44A560A.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/485C9697-FA08-4E54-8E83-8097D37D0B65.jpeg",
+        ".cache/photos_local/87AC5143-4854-46A6-84AC-5EE06614E144.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/D3571C8C-C1B3-4E9C-9E0C-74BA18C68069.jpeg",
+        ".cache/photos_local/B9C4A247-DA0B-491A-A543-F89E2DF17F36.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/D6ADF9D9-13F1-4692-B12F-4551DE6E37FA.jpeg",
+        ".cache/photos_local/2C2F4ABE-25F5-42EA-9D83-5B865E8D85D0.jpeg",
+        ".cache/photos_local/8F1FF3F4-262D-4243-9124-059EF3E09E9F.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/161B89C0-8555-49DC-8788-98B3EB01C038.jpeg",
+        ".cache/photos_local/067A7E48-64F3-486C-A2AD-87C859105044.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C515FECE-478D-4C1B-B56D-FBDFA7BBB7F9.jpeg",
+        ".cache/photos_local/B752BCD3-AACF-4E4F-8CB1-41479ED2120E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F6D543C2-0C91-4751-A257-820DE500EC3A.jpeg",
+        ".cache/photos_local/E3DD2043-97C5-4840-9964-BF4D17B9D8F6.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/C71A6C2B-9442-49E6-9EA1-2900BA2DD996.jpeg",
+        ".cache/photos_local/CCC05814-DA6E-4BB7-9BD1-EF49DFF2A9A7.jpeg",
+        ".cache/photos_local/2DD482DE-98A8-49C3-9FF1-AB058969353D.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/3346D092-16A7-450C-9C13-4D694040FE0A.jpeg",
+        ".cache/photos_local/8CBF3BF2-2097-4C91-9A44-FA58D8FA53A3.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/1FA108F5-6F61-47B8-B891-67F7572B6E5F.jpeg",
+        ".cache/photos_local/34578B7C-5C7E-4B8A-B2F3-7F2239BDBE0A.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E6D45A6E-A72C-4AB5-BC35-541E3D68F557.jpeg",
+        ".cache/photos_local/CBD36F54-BFB6-4E81-A135-A13BE5F38509.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4C07719B-ED47-4F1C-BCF8-C5615E8CA85C.jpeg",
+        ".cache/photos_local/9D36C7B3-9117-405D-B221-E9A3FA3BE065.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C10C213A-EB26-46D0-A663-A2B56752425B.jpeg",
+        ".cache/photos_local/D04D53C5-D79A-4D05-B975-55D57CBC9860.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F4BAA219-8E60-4675-AEEE-98698991E920.jpeg",
+        ".cache/photos_local/0252435C-F525-4498-B121-8919BB28377E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/3E4C3B87-661A-4950-B0DA-41E30C997880.jpeg",
+        ".cache/photos_local/B51BD8AB-66E6-43B6-97E8-E0DC5861FE59.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/97BCC2FC-90C9-40A5-A73B-89769290ED12.jpeg",
+        ".cache/photos_local/372393E1-6179-4F2E-A543-E40FE98AC543.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/320E2285-A3D7-488E-86C9-3E975BB64F0A.jpeg",
+        ".cache/photos_local/383DCD68-819F-46DC-97A7-7A7925964F80.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/2C3F68BC-1F3A-45FF-B2E7-9F0B846A9C0F.jpeg",
+        ".cache/photos_local/F180EB41-87A7-4379-8EBB-A3E79991E474.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/5A8CC7D5-9687-494D-866E-683E5A7C1452.jpeg",
+        ".cache/photos_local/42B4DAF7-017E-4B80-9EAC-758E265E4F59.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/95CF99DD-3C63-4DC5-B00B-5E69D9DE6401.jpeg",
+        ".cache/photos_local/94ECF26D-0319-4B6A-B560-FB78C23CC776.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/FE971577-06A0-4C57-A975-24B9B148B8FB.jpeg",
+        ".cache/photos_local/DF5E7C03-2A32-4191-BABA-6C9F88377D08.jpeg",
+        ".cache/photos_local/697847B8-CE9D-4418-A82D-524C3C8D92B4.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A1EA7FA8-DC92-4E00-91C8-A371529DFFA4.jpeg",
+        ".cache/photos_local/F3DD08E0-369A-4569-8C66-1EABEAA70341.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CAD8FADD-90E6-4E0A-93E4-E461742781D7.jpeg",
+        ".cache/photos_local/6718EB7B-89F5-4662-A156-616A110C2F78.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DBAF76FC-C8DE-4C37-97FD-6C1961B0ED31.jpeg",
+        ".cache/photos_local/FA5B15E9-EDE9-4E2D-B44A-57DD20F47CB3.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A5677BBD-3222-4FEA-AFC8-4A63736E39BA.jpeg",
+        ".cache/photos_local/E15A16CD-E4AD-4ED1-A17F-979B63F79DB9.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/469A511A-BE37-474E-9729-2291AA5E873F.heic",
+        ".cache/photos_local/1088CDAE-117C-49C4-801E-0E98655ADDB5.heic"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/8AF35D11-EF11-40F2-AFDA-A3F107B84231.jpeg",
+        ".cache/photos_local/2C506EBD-6746-4328-AE22-39576714784C.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/300AC285-6B05-474C-9E54-0156562441FB.jpeg",
+        ".cache/photos_local/CC7F20F0-9D2E-4B20-B117-6EDCA323FCA2.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DF4F567C-1ABE-4CF2-BE69-F76E89460E8D.jpeg",
+        ".cache/photos_local/428F5F15-B47F-442E-BAA1-D55006808071.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/BA657BE6-24D0-4ABC-8165-C92A6379A6F9.jpeg",
+        ".cache/photos_local/5F4286EE-ED85-4380-88E5-F74CCC13BFBF.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/80F62722-5EC1-4525-822B-27B68B5FEAAA.jpeg",
+        ".cache/photos_local/B6859BDF-739E-49A4-8600-811F8E401DF2.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E704012F-8A15-43A4-B4BD-A7C5BDB17A59.jpeg",
+        ".cache/photos_local/4CFC8A95-D677-479C-82D1-6DDC31B466DB.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4D5EE09D-46E4-4DFE-B6B2-9954000398B4.jpeg",
+        ".cache/photos_local/E85762EE-721A-4CB3-9FFD-114E48847417.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F844408B-A7BA-4CC6-950F-FF48CA48751F.jpeg",
+        ".cache/photos_local/C35D4B74-BD02-4A78-B540-65E1374748BD.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/1A8C351C-0D86-4CD8-BE06-6CC1D8D63380.jpeg",
+        ".cache/photos_local/A9BA2DE9-4E48-4CBC-A543-C2550947FD19.jpeg"
+      ]
+    }
+  ],
+  "perceptual_groups": [
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CE3A2D10-EC9E-46CE-BECD-3753E4B61375.jpeg",
+        ".cache/photos_local/5E344B07-46D2-4460-B33E-E4FF0911EE0E.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/E697B235-93BF-4CD6-8D23-AA539F78A8A0.jpeg",
+        ".cache/photos_local/3D9B4E99-8E79-40D1-80F1-3CAE6EF24966.jpeg",
+        ".cache/photos_local/duplicates/3D9B4E99-8E79-40D1-80F1-3CAE6EF24966.jpeg"
+      ]
+    },
+    {
+      "size": 10,
+      "files": [
+        ".cache/photos_local/45635B67-5178-4E50-BDF4-93F62EDCA36B.jpeg",
+        ".cache/photos_local/B40D00E8-C0D8-414E-9AF0-0F977284FB51.jpeg",
+        ".cache/photos_local/0FBA63BD-0D71-4CE5-AEB0-CE9EF7C09A88.jpeg",
+        ".cache/photos_local/B9406498-E63F-4577-8813-EA92005AA98B.jpeg",
+        ".cache/photos_local/FD5C7AED-395E-4A71-A18C-2573ED79007E.jpeg",
+        ".cache/photos_local/1E58B29C-EB0B-4EC4-95AC-15C0868CB0F6.jpeg",
+        ".cache/photos_local/91E6E6EF-44A7-4EE0-80F1-354279C84AE4.jpeg",
+        ".cache/photos_local/D73757BD-B8B2-4182-9BBC-387A8BC3E8B0.jpeg",
+        ".cache/photos_local/9D85949C-4BE4-4410-BDDA-8F4D74165661.jpeg",
+        ".cache/photos_local/D7763FEF-7E78-498E-913D-026A422B4D6F.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/63522FDF-1058-4E2D-9FD1-C7394322F8AB.jpeg",
+        ".cache/photos_local/4B7CD3CC-6B73-4A26-BB2A-4943DC111EC8.jpeg",
+        ".cache/photos_local/730FE636-9B93-4CD3-918E-DFDD3F8823C6.heic"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/45C549F2-97E0-4B56-B92D-1A76838A50EB.jpeg",
+        ".cache/photos_local/9F4A14C7-E9BC-43C5-99A4-46A914922A35.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DD070D30-60D8-442E-A19D-AA377547B5E6.jpeg",
+        ".cache/photos_local/3C252FC0-470B-46FE-BA9B-46504F761E66.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/9CFCB082-F663-4705-9FA6-C99DA2515893.jpeg",
+        ".cache/photos_local/F571B8B1-77BC-4ACE-8674-82ACAE27CBFF.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/5080F375-C2CE-4C2E-8254-21796BDA8886.jpeg",
+        ".cache/photos_local/2D013B8D-CA7C-475B-8181-1FD430B5520F.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/55320FBC-25A5-474D-A7A5-431FF5C3E9FD.jpeg",
+        ".cache/photos_local/7256192D-AA79-488B-A524-75ECC00073E6.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/FFA0DB3F-201F-49A8-AB4D-07FC5F3577E6.jpeg",
+        ".cache/photos_local/8E60B39E-330D-42C8-A032-AEF34AA50F48.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CD4F352D-FEF4-4112-AD5A-957EE855FEB4.jpeg",
+        ".cache/photos_local/83C79B02-A3CC-43CC-96E2-2A20F0FEB0CB.jpeg"
+      ]
+    },
+    {
+      "size": 10,
+      "files": [
+        ".cache/photos_local/B31ADD4E-3478-44F6-982B-A70C59D9186B.jpeg",
+        ".cache/photos_local/8D196E6E-7917-41AE-820B-F3FFC2EE1623.jpeg",
+        ".cache/photos_local/689B4301-913A-42D9-8151-39F7B0BB6749.jpeg",
+        ".cache/photos_local/51D5BE5E-13DC-4C50-8BE9-1117B61CF4DA.jpeg",
+        ".cache/photos_local/9E43F771-C4AA-4342-B2A8-668DEB9AF332.jpeg",
+        ".cache/photos_local/02359B56-69CE-4D63-BB70-E7D7DC1DB5D5.jpeg",
+        ".cache/photos_local/CEE53560-9BAB-4AB0-9C2B-0F0FB88B74A2.jpeg",
+        ".cache/photos_local/18D6F717-7230-46FD-8C92-2FEF0CE703CC.jpeg",
+        ".cache/photos_local/DD8D669B-49C0-4005-ABE6-CF596F48A564.jpeg",
+        ".cache/photos_local/24305A62-E742-4DFE-9C38-94426F3B3098.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/30237BFE-952E-4876-A249-BCC4EC3071B3.jpeg",
+        ".cache/photos_local/6AFD50AD-4E36-4964-A5BA-355045D0BFC6.jpeg"
+      ]
+    },
+    {
+      "size": 10,
+      "files": [
+        ".cache/photos_local/197E5322-2B58-4025-BC17-2F6C25646FA9.jpeg",
+        ".cache/photos_local/415557AC-AAA1-4540-8C89-F98D6DB8890F.jpeg",
+        ".cache/photos_local/5F35D905-B742-4DD5-B59C-6F1AF51E7E87.jpeg",
+        ".cache/photos_local/9A89FA8E-6DB5-4E61-BC44-53929800198D.jpeg",
+        ".cache/photos_local/F04231EC-E5EB-43FE-9A50-8D2E66835103.jpeg",
+        ".cache/photos_local/AB2C8AD0-3DE9-4227-8BB2-8026BB53898C.jpeg",
+        ".cache/photos_local/040BF39C-65E4-495A-949E-39BA7AFEE790.jpeg",
+        ".cache/photos_local/3C7B51CF-D011-46A6-8D1A-5D80781A0D2E.jpeg",
+        ".cache/photos_local/E58088DF-32D2-4B74-8F93-319487182F75.jpeg",
+        ".cache/photos_local/4F586BB6-9CFD-40CD-9038-0A3DF0ED65B7.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/98731873-DF5C-46C5-92DC-4E81429EFCC1.jpeg",
+        ".cache/photos_local/170CCAB2-B33C-448F-8F75-5E7CBACBEE38.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E1E211A6-A3BF-4DDE-AC28-992D3429B8E5.jpeg",
+        ".cache/photos_local/C876FD58-E43A-42D0-A96B-4AF2732D5497.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A0061C7C-2906-4A95-A896-F8A0F7051500.jpeg",
+        ".cache/photos_local/20F51D97-2E5C-4FDC-9B0E-73E971B526CC.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4E48703A-7C64-47B0-8187-A9672AF58836.jpeg",
+        ".cache/photos_local/2684BAC9-0DE6-4EC7-AB45-E65A28CDE98D.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C92B348F-3DF2-435A-8F8D-BA08AD33C5BE.jpeg",
+        ".cache/photos_local/FBFBFE0A-585B-4132-A438-0439575A2B4E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/0B3EAC63-CDD4-432D-85CD-109BA0F577B5.jpeg",
+        ".cache/photos_local/D4D29132-4261-44D5-A20D-F2B4D20D7791.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/991EF780-8027-4DF8-9588-6F0400F101AF.jpeg",
+        ".cache/photos_local/09D9A71D-CA97-428C-A519-D9AEA44A560A.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/0F293A5C-E570-44E6-AA7D-2C620CBF744D.jpeg",
+        ".cache/photos_local/1DD379E0-01DA-46B6-8595-7E9F736521FB.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/485C9697-FA08-4E54-8E83-8097D37D0B65.jpeg",
+        ".cache/photos_local/87AC5143-4854-46A6-84AC-5EE06614E144.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/D3571C8C-C1B3-4E9C-9E0C-74BA18C68069.jpeg",
+        ".cache/photos_local/B9C4A247-DA0B-491A-A543-F89E2DF17F36.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/D6ADF9D9-13F1-4692-B12F-4551DE6E37FA.jpeg",
+        ".cache/photos_local/2C2F4ABE-25F5-42EA-9D83-5B865E8D85D0.jpeg",
+        ".cache/photos_local/8F1FF3F4-262D-4243-9124-059EF3E09E9F.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/161B89C0-8555-49DC-8788-98B3EB01C038.jpeg",
+        ".cache/photos_local/067A7E48-64F3-486C-A2AD-87C859105044.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C515FECE-478D-4C1B-B56D-FBDFA7BBB7F9.jpeg",
+        ".cache/photos_local/B752BCD3-AACF-4E4F-8CB1-41479ED2120E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F6D543C2-0C91-4751-A257-820DE500EC3A.jpeg",
+        ".cache/photos_local/E3DD2043-97C5-4840-9964-BF4D17B9D8F6.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/7E462573-6F05-47D2-94C1-AF6F05C06FC7.jpeg",
+        ".cache/photos_local/60CBF3D4-21C9-4E9F-B62E-557A6060A7D3.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/C71A6C2B-9442-49E6-9EA1-2900BA2DD996.jpeg",
+        ".cache/photos_local/CCC05814-DA6E-4BB7-9BD1-EF49DFF2A9A7.jpeg",
+        ".cache/photos_local/2DD482DE-98A8-49C3-9FF1-AB058969353D.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/8A8FCCB4-876A-40EE-86AE-F4485926A18B.jpeg",
+        ".cache/photos_local/8CB8987F-4B1F-4745-A3C0-99126637F545.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/3346D092-16A7-450C-9C13-4D694040FE0A.jpeg",
+        ".cache/photos_local/8CBF3BF2-2097-4C91-9A44-FA58D8FA53A3.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/1FA108F5-6F61-47B8-B891-67F7572B6E5F.jpeg",
+        ".cache/photos_local/34578B7C-5C7E-4B8A-B2F3-7F2239BDBE0A.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/B65BDF24-157C-4967-B9A7-895FDB23A561.jpeg",
+        ".cache/photos_local/DD89B288-B623-4159-B779-2F6A270FC107.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E6D45A6E-A72C-4AB5-BC35-541E3D68F557.jpeg",
+        ".cache/photos_local/CBD36F54-BFB6-4E81-A135-A13BE5F38509.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4C07719B-ED47-4F1C-BCF8-C5615E8CA85C.jpeg",
+        ".cache/photos_local/9D36C7B3-9117-405D-B221-E9A3FA3BE065.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/C10C213A-EB26-46D0-A663-A2B56752425B.jpeg",
+        ".cache/photos_local/D04D53C5-D79A-4D05-B975-55D57CBC9860.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F4BAA219-8E60-4675-AEEE-98698991E920.jpeg",
+        ".cache/photos_local/0252435C-F525-4498-B121-8919BB28377E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/3E4C3B87-661A-4950-B0DA-41E30C997880.jpeg",
+        ".cache/photos_local/B51BD8AB-66E6-43B6-97E8-E0DC5861FE59.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/97BCC2FC-90C9-40A5-A73B-89769290ED12.jpeg",
+        ".cache/photos_local/372393E1-6179-4F2E-A543-E40FE98AC543.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/320E2285-A3D7-488E-86C9-3E975BB64F0A.jpeg",
+        ".cache/photos_local/383DCD68-819F-46DC-97A7-7A7925964F80.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/2C3F68BC-1F3A-45FF-B2E7-9F0B846A9C0F.jpeg",
+        ".cache/photos_local/F180EB41-87A7-4379-8EBB-A3E79991E474.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/5A8CC7D5-9687-494D-866E-683E5A7C1452.jpeg",
+        ".cache/photos_local/42B4DAF7-017E-4B80-9EAC-758E265E4F59.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/95CF99DD-3C63-4DC5-B00B-5E69D9DE6401.jpeg",
+        ".cache/photos_local/94ECF26D-0319-4B6A-B560-FB78C23CC776.jpeg"
+      ]
+    },
+    {
+      "size": 3,
+      "files": [
+        ".cache/photos_local/FE971577-06A0-4C57-A975-24B9B148B8FB.jpeg",
+        ".cache/photos_local/DF5E7C03-2A32-4191-BABA-6C9F88377D08.jpeg",
+        ".cache/photos_local/697847B8-CE9D-4418-A82D-524C3C8D92B4.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A1EA7FA8-DC92-4E00-91C8-A371529DFFA4.jpeg",
+        ".cache/photos_local/F3DD08E0-369A-4569-8C66-1EABEAA70341.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/CAD8FADD-90E6-4E0A-93E4-E461742781D7.jpeg",
+        ".cache/photos_local/6718EB7B-89F5-4662-A156-616A110C2F78.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DBAF76FC-C8DE-4C37-97FD-6C1961B0ED31.jpeg",
+        ".cache/photos_local/FA5B15E9-EDE9-4E2D-B44A-57DD20F47CB3.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/A5677BBD-3222-4FEA-AFC8-4A63736E39BA.jpeg",
+        ".cache/photos_local/E15A16CD-E4AD-4ED1-A17F-979B63F79DB9.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/469A511A-BE37-474E-9729-2291AA5E873F.heic",
+        ".cache/photos_local/1088CDAE-117C-49C4-801E-0E98655ADDB5.heic"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/8AF35D11-EF11-40F2-AFDA-A3F107B84231.jpeg",
+        ".cache/photos_local/2C506EBD-6746-4328-AE22-39576714784C.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/300AC285-6B05-474C-9E54-0156562441FB.jpeg",
+        ".cache/photos_local/CC7F20F0-9D2E-4B20-B117-6EDCA323FCA2.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DF4F567C-1ABE-4CF2-BE69-F76E89460E8D.jpeg",
+        ".cache/photos_local/428F5F15-B47F-442E-BAA1-D55006808071.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/BA657BE6-24D0-4ABC-8165-C92A6379A6F9.jpeg",
+        ".cache/photos_local/5F4286EE-ED85-4380-88E5-F74CCC13BFBF.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/80F62722-5EC1-4525-822B-27B68B5FEAAA.jpeg",
+        ".cache/photos_local/B6859BDF-739E-49A4-8600-811F8E401DF2.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/E704012F-8A15-43A4-B4BD-A7C5BDB17A59.jpeg",
+        ".cache/photos_local/4CFC8A95-D677-479C-82D1-6DDC31B466DB.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/29C78910-F44D-4AA9-BF64-C82A22D0E60A.jpeg",
+        ".cache/photos_local/00982437-9126-49C5-815A-828FAF12843E.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/DCE7437E-F3D1-472A-94D3-5E8BA1A54981.heic",
+        ".cache/photos_local/1E234999-9710-47E6-BD12-6771233A8083.heic"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/4D5EE09D-46E4-4DFE-B6B2-9954000398B4.jpeg",
+        ".cache/photos_local/E85762EE-721A-4CB3-9FFD-114E48847417.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/F844408B-A7BA-4CC6-950F-FF48CA48751F.jpeg",
+        ".cache/photos_local/C35D4B74-BD02-4A78-B540-65E1374748BD.jpeg"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/9CD8D9EB-79ED-42B7-A56E-482A65B45664.jpeg",
+        ".cache/photos_local/CF24B704-C042-45D0-B091-FDCFEAFA8115.heic"
+      ]
+    },
+    {
+      "size": 2,
+      "files": [
+        ".cache/photos_local/1A8C351C-0D86-4CD8-BE06-6CC1D8D63380.jpeg",
+        ".cache/photos_local/A9BA2DE9-4E48-4CBC-A543-C2550947FD19.jpeg"
+      ]
+    }
+  ]
 }
