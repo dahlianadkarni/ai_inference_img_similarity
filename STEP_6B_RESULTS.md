@@ -130,9 +130,9 @@ Avg GPU compute:          8.4ms (10.8ms per execution)
 | GPU compute (server) | 5.7ms | 4.4ms | **1.3× slower** |
 | Batch-32 throughput | 24.3 img/s | 64.3 img/s | **2.6× slower** |
 | VRAM used | 2.8 GB | 3.3 GB | Similar |
-| Cost per hour | $2.00 | $1.50 | 33% more expensive |
+| Cost per hour | $0.092 | $0.85 | 9× cheaper |
 
-**Takeaway:** A100 is 2.6× faster and 25% cheaper than RTX 4080 for batch inference.
+**Takeaway:** A100 is 2.6× faster but 9× more expensive per hour. RTX 4080 is 3.5× more cost-efficient per image at Vast.ai spot pricing.
 
 ---
 
@@ -140,13 +140,13 @@ Avg GPU compute:          8.4ms (10.8ms per execution)
 
 ### Cost Comparison
 
-| Config | Throughput | Cost/hr | Cost per 1000 imgs | Efficiency |
+| Config | Throughput | Cost/hr (actual) | Cost per 1000 imgs | Efficiency |
 |:------:|:----------:|:-------:|:------------------:|:----------:|
-| 1x RTX 4080 | 24.3 img/s | $2.00 | $0.0229 | 100% (baseline) |
-| 4x RTX 4080 | 43.2 img/s | $8.00 | $0.0514 | **45%** |
-| 1x A100 | 64.3 img/s | $1.50 | $0.0065 | **287%** |
+| 1x RTX 4080 | 24.3 img/s | $0.092 | $0.00105 | 100% (baseline) |
+| 4x RTX 4080 | 43.2 img/s | $0.30–2.00 | $0.0019–0.013 | **45–55%** |
+| 1x A100 | 64.3 img/s | $0.85 | $0.0037 | **28%** |
 
-**Key Finding:** 4x RTX 4080 is **2.2× more expensive** per image than 1x RTX 4080, despite only 1.8× throughput gain.
+**Key Finding:** 4x RTX 4080 is **2–12× more expensive** per image than 1x RTX 4080 (depending on spot pricing), despite only 1.8× throughput gain.
 
 ### Break-Even Analysis
 
@@ -270,14 +270,14 @@ Avg GPU compute:          8.4ms (10.8ms per execution)
    - Need 50-100ms delay for optimal batching
 
 4. **Cost-efficiency decreases with multi-GPU**
-   - 1x GPU: $0.0229 per 1000 images
-   - 4x GPU: $0.0514 per 1000 images
-   - 2.2× more expensive per image
+   - 1x GPU: $0.00105 per 1000 images
+   - 4x GPU: $0.0019–0.013 per 1000 images
+   - 2–12× more expensive per image (depending on spot price)
 
-5. **A100 is better value than RTX 4080**
-   - 2.6× faster throughput
-   - 25% cheaper cost
-   - 3.5× better cost-efficiency
+5. **RTX 4080 is better value than A100 at Vast.ai spot pricing**
+   - A100 is 2.6× faster throughput
+   - But RTX 4080 is 9× cheaper per hour ($0.092 vs $0.85)
+   - RTX 4080 is 3.5× more cost-efficient per image
 
 ---
 
@@ -287,7 +287,7 @@ Avg GPU compute:          8.4ms (10.8ms per execution)
 2. **Optional:** Repeat on 4x A100 SXM4 with NVLink for comparison
 3. **Optional:** Test local deployment (co-located client/server)
 4. **Optional:** Implement JPEG base64 input for 5-6× improvement
-5. **Production:** Deploy 1x A100 with PyTorch FastAPI for best value
+5. **Production:** Deploy 1× RTX 4080 for best cost-efficiency, or 1× A100 for highest throughput
 
 ---
 

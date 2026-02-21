@@ -171,6 +171,7 @@
 |--------|:-:|:-:|:-:|
 | Mean | 219.2ms† | 337.4ms | 336.5ms |
 | Median | 198.5ms† | 274.4ms | 272.5ms |
+| Batch-32 throughput (img/s) | 22.7 | 24.3 | 18.6 |
 | Server GPU Compute | N/A | 5.7ms | **2.0ms** ⚡ |
 
 †PyTorch showed anomalous performance on this instance.
@@ -209,11 +210,11 @@
 
 ### 7.2 Scaling Efficiency
 
-| Config | Throughput | Scaling Factor | Efficiency | Cost/hr | Cost per 1K imgs |
+| Config | Throughput | Scaling Factor | Efficiency | Cost/hr (actual) | Cost per 1K imgs |
 |--------|:---------:|:--------------:|:----------:|:-------:|:-----------------:|
-| 1× RTX 4080 | 24.3 img/s | 1.0× | baseline | $2.00 | $0.023 |
-| **4× RTX 4080** | **43.2 img/s** | **1.8×** | **45%** | $8.00 | $0.051 |
-| 1× A100 (ref) | 64.3 img/s | 2.6× | — | $1.50 | $0.006 |
+| 1× RTX 4080 | 24.3 img/s | 1.0× | baseline | $0.092 | **$0.001** ⚡ |
+| **4× RTX 4080** | **43.2 img/s** | **1.8×** | **45%** | $0.30–2.00 | $0.002–0.013 |
+| 1× A100 (ref) | 64.3 img/s | 2.6× | — | $0.85 | $0.004 |
 
 ### 7.3 Server-Side Timing (Triton Metrics)
 

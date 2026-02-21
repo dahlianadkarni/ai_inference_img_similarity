@@ -412,17 +412,17 @@
       <h3>Payload Size Impact</h3>
       <div class="bar-chart gap-sm">
         <div class="bar-row">
-          <div class="bar-label">JSON</div>
+          <div class="bar-label">JSON (Triton)</div>
           <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
           <div class="bar-value red">95 MB</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label">Binary</div>
+          <div class="bar-label">Binary (Triton)</div>
           <div class="bar-track"><div class="bar-fill orange" style="width:19.7%"></div></div>
           <div class="bar-value orange">18 MB</div>
         </div>
         <div class="bar-row">
-          <div class="bar-label">base64 JPEG</div>
+          <div class="bar-label">base64 JPEG (PyTorch)</div>
           <div class="bar-track"><div class="bar-fill green" style="width:0.33%"></div></div>
           <div class="bar-value green">0.3 MB</div>
         </div>
@@ -505,7 +505,7 @@
 <section class="slide" data-slide="10">
   <span class="badge">Step 6A</span>
   <h2>3-Way Backend Comparison — A100 SXM4 80GB</h2>
-  <p class="dim">All 3 backends deployed on the same GPU instance for apples-to-apples comparison.</p>
+  <p class="dim">All 3 backends deployed on the same GPU instance (Boston, MA) for apples-to-apples comparison. Client: macOS in MA.</p>
   <table class="gap">
     <tr><th>Metric</th><th>PyTorch FastAPI</th><th>Triton ONNX</th><th>Triton TRT EP</th></tr>
     <tr>
@@ -526,14 +526,14 @@
     </tr>
   </table>
   <div class="insight gap">
-    <strong>Key insight:</strong> Triton's GPU compute is <span class="green">12.8× faster</span> (4.4ms vs ~56ms) — but PyTorch wins client-side because it accepts 10KB JPEG images vs Triton's 602KB tensor payload. <em>Network overhead dominates.</em>
+    <strong>Key insight:</strong> Triton's server-side GPU compute is just <span class="green">4.4ms</span> — yet PyTorch wins end-to-end (<span class="green">56.9ms</span> vs 182.9ms client latency) because it accepts 10KB JPEG images vs Triton's 602KB tensor payload. <em>The cheaper data transfer more than offsets Triton's faster GPU compute.</em>
   </div>
 </section>
 
 <!-- ═══════════════════ SLIDE 12: WHERE DOES THE TIME GO? ═══════════════════ -->
 <section class="slide" data-slide="11">
   <h2>Where Does the Time Go?</h2>
-  <p class="dim center">Latency breakdown for a single Triton ONNX request on A100 (182.9ms total)</p>
+  <p class="dim center">Latency breakdown for a single Triton ONNX request on A100 (182.9ms total, Mac client → Boston instance)</p>
   <div class="cols gap">
     <div>
       <h3>Triton ONNX (182.9ms)</h3>
@@ -586,7 +586,7 @@
 <!-- ═══════════════════ SLIDE 13: GPU ARCHITECTURE MATTERS ═══════════════════ -->
 <section class="slide" data-slide="12">
   <h2>GPU Architecture Changes the Winner</h2>
-  <p class="dim center">Same model, same code — opposite results depending on GPU hardware.</p>
+  <p class="dim center">Same model, same code — opposite results depending on GPU hardware.<br>A100: Boston, MA &nbsp;|&nbsp; RTX 4080: Lititz, PA &nbsp;|&nbsp; Client: macOS in MA</p>
   <div class="cols gap">
     <div>
       <h3>A100 SXM4 (Datacenter)</h3>
@@ -630,6 +630,7 @@
 <section class="slide" data-slide="13">
   <span class="badge">Step 6B</span>
   <h2>Multi-GPU Scaling Study — 4× RTX 4080</h2>
+  <p class="dim">Instance: Lititz, PA &nbsp;|&nbsp; Client: macOS in MA</p>
   <div class="cols gap">
     <div>
       <h3>Throughput vs Concurrency</h3>
@@ -675,13 +676,13 @@
       <table>
         <tr><th>Config</th><th>Throughput</th><th>Cost/hr</th><th>Cost per 1K imgs</th></tr>
         <tr>
-          <td>1× RTX 4080</td><td>24.3 img/s</td><td>$2.00</td><td>$0.023</td>
+          <td class="green">1× RTX 4080</td><td>24.3 img/s</td><td class="green">$0.092</td><td class="green">$0.001</td>
         </tr>
         <tr>
-          <td class="red">4× RTX 4080</td><td>43.2 img/s</td><td class="red">$8.00</td><td class="red">$0.051</td>
+          <td>1× A100</td><td class="green">64.3 img/s</td><td>$0.85</td><td>$0.004</td>
         </tr>
         <tr>
-          <td class="green">1× A100</td><td class="green">64.3 img/s</td><td>$1.50</td><td class="green">$0.006</td>
+          <td class="red">4× RTX 4080</td><td>43.2 img/s</td><td class="red">$0.30–2.00</td><td class="red">$0.002–0.013</td>
         </tr>
       </table>
     </div>
@@ -691,23 +692,23 @@
         <div class="bar-row">
           <div class="bar-label">4× RTX 4080</div>
           <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
-          <div class="bar-value red">$0.051</div>
-        </div>
-        <div class="bar-row">
-          <div class="bar-label">1× RTX 4080</div>
-          <div class="bar-track"><div class="bar-fill orange" style="width:45.1%"></div></div>
-          <div class="bar-value orange">$0.023</div>
+          <div class="bar-value red">$0.002–0.013</div>
         </div>
         <div class="bar-row">
           <div class="bar-label">1× A100</div>
-          <div class="bar-track"><div class="bar-fill green" style="width:11.8%"></div></div>
-          <div class="bar-value winner">$0.006</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:30.8%"></div></div>
+          <div class="bar-value orange">$0.004</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">1× RTX 4080</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:7.7%"></div></div>
+          <div class="bar-value winner">$0.001</div>
         </div>
       </div>
     </div>
   </div>
   <div class="insight gap">
-    <strong>1× A100 is 3.5× more cost-efficient than 1× RTX 4080</strong> and <strong>8.5× more than 4× RTX 4080</strong> — validating that horizontal single-GPU scaling beats vertical multi-GPU for network-bound workloads.
+    <strong>1× RTX 4080 at $0.092/hr is 3.5× more cost-efficient than 1× A100</strong> ($0.85/hr). Even the 4× RTX 4080 at best spot pricing ($0.30/hr) is 2× more expensive per image than 1×. Cheapest hardware + adequate throughput wins.
   </div>
 </section>
 
@@ -729,7 +730,7 @@
     </div>
     <div style="margin-bottom:1rem;">
       <h3>4. Multi-GPU Scaling Is Not Free</h3>
-      <p class="dim">4× GPUs → only 1.8× throughput (45% efficiency) at 2.2× cost per image.</p>
+      <p class="dim">4× GPUs → only 1.8× throughput (45% efficiency) at 2× cost per image even at best spot pricing.</p>
     </div>
     <div>
       <h3>5. Protocol Design > Compute Optimization</h3>

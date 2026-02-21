@@ -169,15 +169,15 @@ This anomaly makes PyTorch appear uncompetitive on RTX 4080, but it's likely an 
 
 ### Cost Analysis: RTX 4080 vs A100
 
-Assuming Vast.ai pricing (approximate):
-- **RTX 4080**: $0.30–0.50/hour
-- **A100 80GB**: $1.50–3.00/hour
+Actual Vast.ai spot pricing paid:
+- **RTX 4080**: $0.092/hour
+- **A100 80GB**: $0.83–0.871/hour (~$0.85)
 
-**Cost per 1000 inferences:**
-- RTX 4080 @ 2.0ms = 500 img/s = $0.0002–0.0003
-- A100 @ 4.4ms = 227 img/s = $0.0018–0.0037
+**Cost per 1000 inferences (server-side GPU compute only):**
+- RTX 4080 @ 2.0ms = 500 img/s theoretical = $0.00005/1K
+- A100 @ 4.4ms = 227 img/s theoretical = $0.001/1K
 
-**RTX 4080 is 9-12× more cost-efficient** for this workload, with faster GPU compute.
+**RTX 4080 is ~9× cheaper per hour** and has faster GPU compute for TRT workloads.
 
 ---
 
@@ -190,7 +190,7 @@ Assuming Vast.ai pricing (approximate):
 | Client latency (single) | 337ms (ONNX/TRT) | **57ms (PyTorch)** |
 | Batch-32 throughput | **24.3 img/s (ONNX)** | **64.3 img/s (PyTorch)** |
 | VRAM usage (3 backends) | 2.8 GB | 3.3 GB |
-| Cost/hour (approx) | **$0.30–0.50** | $1.50–3.00 |
+| Cost/hour (actual) | **$0.092** | $0.85 |
 | Cost-efficiency | **9-12× better** | Baseline |
 
 ---
@@ -205,7 +205,7 @@ The **RTX 4080 benchmark reveals a critical finding**: TensorRT's benefits are *
 **Production recommendation depends on your deployment GPU:**
 - **RTX 3070/3080/4080/4090**: Use **Triton TensorRT EP** for maximum efficiency
 - **A100/H100/L40**: Use **Triton ONNX CUDA EP** for stable performance
-- **Cost-constrained**: RTX 4080 delivers **9-12× better cost/inference** than A100
+- **Cost-constrained**: RTX 4080 delivers **~9× cheaper hourly rate** and **3.5× better cost per image** than A100
 
 ---
 

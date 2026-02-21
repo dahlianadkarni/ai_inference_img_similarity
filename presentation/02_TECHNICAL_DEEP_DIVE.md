@@ -166,11 +166,12 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 Tested on multiple GPU providers and hardware:
 
-| Provider | GPU | VRAM | Outcome |
-|----------|-----|:----:|---------|
-| Vast.ai | RTX A4000 | 16 GB | ✅ Primary test platform |
-| Vast.ai | A100 SXM4 | 80 GB | ✅ Step 6A comparison |
-| Vast.ai | 4× RTX 4080 | 4×16 GB | ✅ Step 6B multi-GPU |
+| Provider | GPU | VRAM | Location | Cost/hr | Outcome |
+|----------|----------|:----:|----------|:-------:|-------------------------------|
+| Vast.ai  | RTX A4000      | 16 GB  | QC, Canada   | $0.092      | ✅ Primary test platform (Steps 4–5B) |
+| Vast.ai  | A100 SXM4      | 80 GB  | MA, US       | $0.85       | ✅ Step 6A comparison |
+| Vast.ai  | RTX 4080       | 16 GB  | PA, US       | $0.092      | ✅ Step 6A comparison |
+| Vast.ai  | 4× RTX 4080    | 4×16 GB| PA, US       | $0.30–2.00  | ✅ Step 6B multi-GPU |
 
 ### Deployment Workflow
 
@@ -400,7 +401,7 @@ Deployed all three backends on the same GPU for fair comparison:
 | Triton ONNX CUDA EP | ONNX Runtime | 8003 |
 | Triton TensorRT EP | ONNX RT + TRT EP | 8003 |
 
-**All running simultaneously on a single Docker container** (`Dockerfile.step6a-all`), tested on both A100 SXM4 80GB and RTX 4080 16GB.
+**All running simultaneously on a single Docker container** (`Dockerfile.step6a-all`), tested on both A100 SXM4 80GB (Boston, MA) and RTX 4080 16GB (Lititz, PA). Client ran on macOS in MA — network RTT varied by instance location (~20–30ms).
 
 ### Results: A100 SXM4 80GB
 
@@ -416,6 +417,7 @@ Deployed all three backends on the same GPU for fair comparison:
 |--------|:-------:|:-----------:|:----------:|
 | **Client latency (single)** | 219ms | 337ms | 337ms |
 | **Server GPU compute** | ~10–15ms (est.) | 5.7ms | **2.0ms** ⚡ |
+| **Batch-32 throughput** | 22.7 img/s | **24.3 img/s** ⚡ | 18.6 img/s |
 
 ### The Key Insight: Where Does the Time Go?
 
@@ -453,7 +455,7 @@ All three backends combined used only **3.3 GB** on the A100 (4.1% of 80GB) and 
 
 ### Setup
 
-- **Instance**: 4× NVIDIA RTX 4080 (16GB each) on Vast.ai
+- **Instance**: 4× NVIDIA RTX 4080 (16GB each) on Vast.ai (PA — same machine as 1× RTX 4080 benchmark)
 - **Interconnect**: PCIe Gen4
 - **Config**: Triton with `instance_group` distributing across all 4 GPUs
 - **Test**: Varied concurrency from 1 to 128 concurrent requests
@@ -493,13 +495,13 @@ But the **client-side** latency is 416ms at peak — meaning **95% of time is ne
 
 ### Cost Analysis
 
-| Config | Cost/hr | Throughput | Cost per 1K images |
+| Config | Cost/hr (actual) | Throughput | Cost per 1K images |
 |--------|:-------:|:----------:|:------------------:|
-| 1× RTX 4080 | $2.00 | 24.3 img/s | $0.023 |
-| 4× RTX 4080 | $8.00 | 43.2 img/s | $0.051 |
-| 1× A100 | $1.50 | 64.3 img/s | $0.006 |
+| 1× RTX 4080 | $0.092 | 24.3 img/s | **$0.001** ⚡ |
+| 1× A100 | $0.85 | 64.3 img/s | $0.004 |
+| 4× RTX 4080 | $0.30–2.00 | 43.2 img/s | $0.002–0.013 |
 
-4× RTX 4080 is **2.2× more expensive per image** than 1× RTX 4080. The A100 is the best value at **3.5× more cost-efficient**.
+1× RTX 4080 at $0.092/hr is **3.5× more cost-efficient** than the A100 ($0.85/hr). Even the 4× RTX 4080 at best spot pricing ($0.30/hr) is **2× more expensive per image** than a single GPU. Cheapest hardware with adequate throughput wins on cost.
 
 ### What I Learned
 

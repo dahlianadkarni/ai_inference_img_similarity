@@ -2,6 +2,10 @@
 
 Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you review them in a local web UI and optionally delete selected photos from Apple Photos.
 
+**🎬 Project Presentation:**
+- **[presentation/README.md](presentation/README.md)** — Complete presentation materials (slides, executive summary, technical deep-dive)
+- **[presentation/slides.html](presentation/slides.html)** — Interactive HTML slide deck (18 slides, open in browser)
+
 **📚 Documentation:**
 - **[COMMANDS_CHEATSHEET.md](COMMANDS_CHEATSHEET.md)** — Quick cheatsheet commands to start servers, etc.
 - **[PLAN.md](PLAN.md)** — 6-step infrastructure learning plan (all steps complete ✅)
@@ -16,10 +20,6 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 - **[STEP_6B_RESULTS.md](STEP_6B_RESULTS.md)** — Step 6B: 4x RTX 4080 multi-GPU scaling study
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8081)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
-
-**🎬 Project Presentation:**
-- **[presentation/README.md](presentation/README.md)** — Complete presentation materials (slides, executive summary, technical deep-dive)
-- **[presentation/slides.html](presentation/slides.html)** — Interactive HTML slide deck (18 slides, open in browser)
 
 ---
 
