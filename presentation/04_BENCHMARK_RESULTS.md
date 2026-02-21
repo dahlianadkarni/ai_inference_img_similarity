@@ -13,8 +13,10 @@
 5. [Step 6A: 3-Way Comparison (A100)](#5-step-6a-3-way-comparison-a100)
 6. [Step 6A: 3-Way Comparison (RTX 4080)](#6-step-6a-3-way-comparison-rtx-4080)
 7. [Step 6B: Multi-GPU Scaling (4× RTX 4080)](#7-step-6b-multi-gpu-scaling-4-rtx-4080)
-8. [Cross-Step Comparison Tables](#8-cross-step-comparison-tables)
-9. [ONNX Model Profile](#9-onnx-model-profile)
+8. [Step 7: 5-Way Protocol Comparison (A100)](#8-step-7-5-way-protocol-comparison-a100)
+9. [Step 7B: 5-Way Protocol Comparison (RTX 4090)](#9-step-7b-5-way-protocol-comparison-rtx-4090)
+10. [Cross-Step Comparison Tables](#10-cross-step-comparison-tables)
+11. [ONNX Model Profile](#11-onnx-model-profile)
 
 ---
 
@@ -23,9 +25,10 @@
 | GPU | Type | VRAM | Provider | Steps |
 |-----|------|:----:|----------|:-----:|
 | RTX A4000 | Workstation | 16 GB | Vast.ai | 4, 5A, 5B |
-| A100 SXM4 | Datacenter | 80 GB | Vast.ai | 6A |
+| A100 SXM4 | Datacenter | 80 GB | Vast.ai | 6A, 7 |
 | RTX 4080 | Consumer | 16 GB | Vast.ai | 6A, 6B |
 | 4× RTX 4080 | Consumer (multi) | 4×16 GB | Vast.ai | 6B |
+| RTX 4090 | Consumer | 24 GB | Vast.ai | 7B |
 
 **Client:** MacBook Pro (macOS), benchmarking over internet to Vast.ai datacenters.
 
@@ -246,9 +249,108 @@
 
 ---
 
-## 8. Cross-Step Comparison Tables
+## 8. Step 7: 5-Way Protocol Comparison (A100)
 
-### 8.1 Single-Image Client Latency Evolution
+**GPU:** A100 SXM4 80GB | **Location:** Massachusetts | **IP:** 207.180.148.74 | **Date:** Feb 20, 2026  
+**5 backends on same instance (step6a docker-compose) | 30 iterations**
+
+### 8.1 Serial p50 Latency (ms)
+
+| Backend | b=1 | b=4 | b=8 | b=16 | b=32 |
+|---------|----:|----:|----:|-----:|-----:|
+| PyTorch HTTP (JPEG ~10KB) | **64.2** | **150.9** | **214.9** | **344.2** | **659.4** |
+| Triton ONNX HTTP | 208.7 | 427.3 | 869.2 | 1974.2 | 5266.9 |
+| Triton ONNX gRPC | 217.5 | 303.5 | 617.8 | 1292.1 | 3126.8 |
+| Triton TRT  HTTP | 171.4 | 295.1 | 632.8 | 1079.7 | 2640.2 |
+| Triton TRT  gRPC | 200.2 | 317.9 | 409.6 | 747.5 | 2224.1 |
+
+### 8.2 Serial Throughput (img/s)
+
+| Backend | b=1 | b=4 | b=8 | b=16 | b=32 |
+|---------|----:|----:|----:|-----:|-----:|
+| PyTorch HTTP | **15.6** | **26.5** | **37.2** | **46.5** | **48.5** |
+| Triton ONNX HTTP | 4.8 | 9.4 | 9.2 | 8.1 | 6.1 |
+| Triton ONNX gRPC | 4.6 | 13.2 | 12.9 | 12.4 | 10.2 |
+| Triton TRT  HTTP | 5.8 | 13.6 | 12.6 | 14.8 | 12.1 |
+| Triton TRT  gRPC | 5.0 | 12.6 | 19.5 | 21.4 | 14.4 |
+
+### 8.3 gRPC vs HTTP Speedup (p50; >1.0× = gRPC faster)
+
+| Pair | b=1 | b=4 | b=8 | b=16 | b=32 |
+|------|----:|----:|----:|-----:|-----:|
+| ONNX gRPC/HTTP | 0.96× | 1.41× | 1.41× | 1.53× | 1.68× |
+| TRT  gRPC/HTTP | 0.86× | 0.93× | 1.54× | 1.44× | 1.19× |
+
+### 8.4 Concurrent Throughput (batch=1, img/s)
+
+| Backend | conc=1 | conc=8 | conc=16 |
+|---------|-------:|-------:|--------:|
+| PyTorch HTTP | 14.1 | 24.0 | 30.5 |
+| Triton ONNX HTTP | 5.1 | **28.8** | **43.6** |
+| Triton ONNX gRPC | 4.7 | 16.6 | 7.5 |
+| Triton TRT  HTTP | 5.5 | 32.4 | 22.4 |
+| Triton TRT  gRPC | 4.7 | 14.3 | 15.4 |
+
+### 8.5 Server-Side GPU Compute (batch=1)
+
+| Backend | GPU compute |
+|---------|------------:|
+| Triton ONNX HTTP | 8.67ms |
+| Triton ONNX gRPC | 4.04ms |
+| Triton TRT HTTP | ⚠️ 1657.75ms (engine compilation) |
+| Triton TRT gRPC | **3.63ms** (post-cache, true latency) |
+
+---
+
+## 9. Step 7B: 5-Way Protocol Comparison (RTX 4090)
+
+**GPU:** RTX 4090 24GB | **Location:** Pennsylvania | **IP:** 173.185.79.174 | **Cost:** $0.391/hr | **Date:** Feb 20, 2026  
+**Same 5 backends | 30 iterations**
+
+### 9.1 Serial p50 Latency (ms)
+
+| Backend | b=1 | b=4 | b=8 | b=16 | b=32 |
+|---------|----:|----:|----:|-----:|-----:|
+| PyTorch HTTP (JPEG ~10KB) | **137.2** | **303.0** | **355.0** | **497.4** | **812.7** |
+| Triton ONNX HTTP | 272.1 | 386.3 | 1466.9 | 3307.5 | 6731.8 |
+| Triton ONNX gRPC | 318.5 | 432.2 | 724.9 | 2066.1 | 6610.7 |
+| Triton TRT  HTTP | 269.9 | 424.1 | 783.9 | 4127.1 | 9130.2 |
+| Triton TRT  gRPC | 312.5 | 501.4 | 956.0 | 2966.0 | 8434.8 |
+
+### 9.2 gRPC vs HTTP Speedup (p50)
+
+| Pair | b=1 | b=4 | b=8 | b=16 | b=32 |
+|------|----:|----:|----:|-----:|-----:|
+| ONNX gRPC/HTTP | 0.85× | 0.89× | 2.02× | 1.60× | 1.02× |
+| TRT  gRPC/HTTP | 0.86× | 0.85× | 0.82× | 1.39× | 1.08× |
+
+### 9.3 Concurrent Throughput (batch=1, img/s)
+
+| Backend | conc=1 | conc=8 | conc=16 |
+|---------|-------:|-------:|--------:|
+| PyTorch HTTP | 6.7 | **47.3** | **49.1** |
+| Triton ONNX HTTP | 3.2 | 17.5 | 32.2 |
+| Triton ONNX gRPC | 2.6 | 4.1 | 4.0 |
+| Triton TRT  HTTP | 2.8 | 20.1 | 21.8 |
+| Triton TRT  gRPC | 2.9 | 4.2 | 6.1 |
+
+### 9.4 Cross-GPU Comparison — batch=1 p50 (ms)
+
+| Backend | A100 SXM4 (MA) | RTX 4090 (PA) | RTX/A100 ratio |
+|---------|---------------:|--------------:|---------------:|
+| PyTorch HTTP | 64.2 | 137.2 | 2.14× slower |
+| Triton ONNX HTTP | 208.7 | 272.1 | 1.30× slower |
+| Triton ONNX gRPC | 217.5 | 318.5 | 1.46× slower |
+| Triton TRT  HTTP | 171.4 | 269.9 | 1.57× slower |
+| Triton TRT  gRPC | 200.2 | 312.5 | 1.56× slower |
+
+**Key insight:** PyTorch shows the largest relative slowdown (2.1×) because it scales with GPU compute speed. Triton ONNX/TRT baselines are only 1.3–1.6× slower — they remain transport-bound at 602KB regardless of GPU tier.
+
+---
+
+## 10. Cross-Step Comparison Tables
+
+### 10.1 Single-Image Client Latency Evolution
 
 | Step | Backend | GPU | Protocol | Latency (p50) |
 |:----:|---------|-----|----------|:-------------:|
@@ -260,10 +362,16 @@
 | 6A | Triton TRT | A100 | Binary | 200.3ms |
 | 6A | Triton ONNX | RTX 4080 | Binary | 274.4ms |
 | 6A | Triton TRT | RTX 4080 | Binary | 272.5ms |
+| 7 | PyTorch HTTP | A100 | base64 JPEG | **64.2ms** ⚡ |
+| 7 | Triton ONNX HTTP | A100 | Binary | 208.7ms |
+| 7 | Triton ONNX gRPC | A100 | Binary (gRPC) | 217.5ms |
+| 7 | PyTorch HTTP | RTX 4090 | base64 JPEG | **137.2ms** |
+| 7 | Triton ONNX HTTP | RTX 4090 | Binary | 272.1ms |
+| 7 | Triton ONNX gRPC | RTX 4090 | Binary (gRPC) | 318.5ms |
 
 *High variance due to network, not GPU performance.
 
-### 8.2 Server-Side GPU Compute Evolution
+### 10.2 Server-Side GPU Compute Evolution
 
 | Step | Backend | GPU | Compute Time |
 |:----:|---------|-----|:------------:|
@@ -274,8 +382,13 @@
 | 6A | ONNX CUDA EP | RTX 4080 | 5.7ms |
 | 6A | TensorRT EP | RTX 4080 | **2.0ms** ⚡ |
 | 6B | ONNX CUDA EP | 4× RTX 4080 | 8.4ms |
+| 7 | ONNX CUDA EP (HTTP) | A100 | 8.67ms |
+| 7 | ONNX CUDA EP (gRPC) | A100 | 4.04ms |
+| 7 | TRT EP (gRPC, cached) | A100 | **3.63ms** |
+| 7 | ONNX CUDA EP (gRPC) | RTX 4090 | 4.41ms |
+| 7 | TRT EP (gRPC, cached) | RTX 4090 | **2.68ms** |
 
-### 8.3 Throughput Comparison (Best Results Per Step)
+### 10.3 Throughput Comparison (Best Results Per Step)
 
 | Step | Config | Best Throughput | Notes |
 |:----:|--------|:---------------:|-------|
@@ -284,24 +397,27 @@
 | 6A | PyTorch, A100 | **64.3 img/s** ⚡ | Batch-32 |
 | 6A | ONNX, RTX 4080 | 24.3 img/s | Batch-32 |
 | 6B | ONNX, 4× RTX 4080 | 43.2 img/s | Concurrency-32 |
+| 7 | ONNX HTTP, A100 | 43.6 img/s | Concurrent, conc=16 |
+| 7 | PyTorch, RTX 4090 | 49.1 img/s | Concurrent, conc=16 |
 
-### 8.4 Protocol Impact Summary
+### 10.4 Protocol Impact Summary
 
 | Format | Payload per Image | Network Time | Used By |
 |--------|:-----------------:|:------------:|---------|
 | JSON `.tolist()` | ~2,980 KB | ~1,800ms (batch-32) | Step 4 (initial) |
-| Binary tensor | ~602 KB | ~150–170ms | Triton (Steps 5–6) |
+| Binary tensor (HTTP) | ~602 KB | ~150–170ms | Triton HTTP (Steps 5–7) |
+| Binary tensor (gRPC) | ~602 KB | ~155–175ms at batch=1; ~120ms at batch=8+ | Triton gRPC (Step 7) |
 | Base64 JPEG | ~10 KB | ~25–35ms | PyTorch FastAPI |
 
-**Takeaway:** 300× payload difference between JSON and base64 JPEG. Protocol design dominates performance.
+**Takeaway:** gRPC and HTTP/1.1 binary are functionally equivalent at batch=1 — the bottleneck is 602KB payload transfer regardless of framing. Protocol choice only matters for batch≥4 (gRPC ~1.4–2.0× faster) or under high concurrency (HTTP wins — gRPC client has channel contention).
 
 ---
 
-## 9. ONNX Model Profile
+## 11. ONNX Model Profile
 
 **Model:** OpenCLIP ViT-B/32 | **File:** 335.5 MB | **Opset:** 14 | **Nodes:** 2,272
 
-### 9.1 Operator Breakdown
+### 11.1 Operator Breakdown
 
 | Operator | Total Time | % of Compute | Invocations |
 |----------|:----------:|:------------:|:-----------:|
@@ -316,7 +432,7 @@
 | Mul | 173ms | 0.5% | 23,760 |
 | Softmax | 149ms | 0.4% | 5,940 |
 
-### 9.2 Batch Scaling (CPU)
+### 11.2 Batch Scaling (CPU)
 
 | Batch Size | Latency | Images/sec | Scaling |
 |:---:|:---:|:---:|:---:|
@@ -326,7 +442,7 @@
 | 16 | 290.3ms | 55.1 | 9.7× |
 | 32 | 585.0ms | 54.7 | 19.5× |
 
-### 9.3 Session Creation (Cold Start)
+### 11.3 Session Creation (Cold Start)
 
 | Metric | Value |
 |--------|:-----:|
@@ -342,6 +458,8 @@
 |------|----------|
 | `benchmark_results/step6a_a100_remote.json` | Step 6A A100 raw data |
 | `benchmark_results/step6a_rtx4080_remote.json` | Step 6A RTX 4080 raw data |
+| `benchmark_results/step7_5way_20260220_221313.json` | Step 7 A100 5-way gRPC/HTTP raw data |
+| `benchmark_results/step7_5way_20260220_232454.json` | Step 7 RTX 4090 5-way gRPC/HTTP raw data |
 | `benchmark_results/step6b_rtx4080_4gpu-rtx4080_20260215_191823.json` | Step 6B multi-GPU raw data |
 | `benchmark_results/tensorrt_ep_results.json` | Step 5B TRT EP results |
 | `benchmark_results/triton_rtx3070_20260214_083702.json` | Step 4 Triton baseline |

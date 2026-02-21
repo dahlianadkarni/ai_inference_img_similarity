@@ -25,6 +25,12 @@ try:
 except ImportError:
     TRITONCLIENT_AVAILABLE = False
 
+try:
+    import tritonclient.grpc as grpcclient
+    TRITONCLIENT_GRPC_AVAILABLE = True
+except ImportError:
+    TRITONCLIENT_GRPC_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +38,9 @@ class InferenceClient:
     """Client for calling the inference service.
     
     Supports multiple backends via environment variables:
-    - INFERENCE_BACKEND: "pytorch" (default) or "triton"
+    - INFERENCE_BACKEND: "pytorch" (default), "triton", or "triton_grpc"
     - INFERENCE_SERVICE_URL: Service URL (default: http://127.0.0.1:8002)
+    - TRITON_GRPC_URL: gRPC URL for triton_grpc backend (default: auto-derived as HTTP_PORT+1)
     """
     
     def __init__(
@@ -41,21 +48,45 @@ class InferenceClient:
         service_url: str = None,
         backend: str = None,
         timeout: float = 300.0,
+        grpc_url: str = None,
     ):
         """
         Initialize client.
         
         Args:
             service_url: Base URL of inference service (or use INFERENCE_SERVICE_URL env)
-            backend: Backend type - "pytorch" or "triton" (or use INFERENCE_BACKEND env)
+            backend: Backend type - "pytorch", "triton", or "triton_grpc" (or use INFERENCE_BACKEND env)
             timeout: Request timeout in seconds
+            grpc_url: gRPC endpoint for triton_grpc backend, e.g. "host:8004"
+                      (or use TRITON_GRPC_URL env; defaults to HTTP port+1)
         """
         self.service_url = (service_url or os.getenv("INFERENCE_SERVICE_URL", "http://127.0.0.1:8002")).rstrip("/")
         self.backend = (backend or os.getenv("INFERENCE_BACKEND", "pytorch")).lower()
         self.timeout = timeout
         self.client = httpx.Client(timeout=timeout)
+
+        # Resolve gRPC URL for triton_grpc backend
+        if self.backend == "triton_grpc":
+            self.grpc_url = (
+                grpc_url
+                or os.getenv("TRITON_GRPC_URL")
+                or self._derive_grpc_url()
+            ).replace("grpc://", "").replace("http://", "")
         
         logger.info(f"InferenceClient initialized: backend={self.backend}, url={self.service_url}")
+
+    def _derive_grpc_url(self) -> str:
+        """Derive Triton gRPC URL from HTTP service URL by incrementing port by 1.
+        
+        Triton always exposes gRPC on HTTP_PORT+1 in our docker-compose setup:
+          local:  HTTP 8003 → gRPC 8004
+          step6a: HTTP 8010 → gRPC 8011, HTTP 8020 → gRPC 8021
+        """
+        url = self.service_url.replace("http://", "").replace("https://", "")
+        host, _, port_str = url.rpartition(":")
+        if host and port_str.isdigit():
+            return f"{host}:{int(port_str) + 1}"
+        return url
     
     def __del__(self):
         """Clean up HTTP client."""
@@ -70,7 +101,7 @@ class InferenceClient:
             True if service is accessible and healthy
         """
         try:
-            if self.backend == "triton":
+            if self.backend in ("triton", "triton_grpc"):
                 response = self.client.get(f"{self.service_url}/v2/health/ready")
             else:  # pytorch
                 response = self.client.get(f"{self.service_url}/health")
@@ -87,7 +118,7 @@ class InferenceClient:
             Model information dict
         """
         try:
-            if self.backend == "triton":
+            if self.backend in ("triton", "triton_grpc"):
                 response = self.client.get(f"{self.service_url}/v2/models/openclip_vit_b32")
                 response.raise_for_status()
                 data = response.json()
@@ -95,7 +126,7 @@ class InferenceClient:
                 return {
                     "model_name": data.get("name"),
                     "platform": data.get("platform"),
-                    "backend": "triton",
+                    "backend": self.backend,
                     "max_batch_size": data.get("max_batch_size"),
                     "pretrained": "openai",  # Default for Triton ONNX model
                 }
@@ -127,7 +158,9 @@ class InferenceClient:
         Returns:
             Array of embeddings, shape (n_images, embedding_dim)
         """
-        if self.backend == "triton":
+        if self.backend == "triton_grpc":
+            return self._embed_triton_grpc(images)
+        elif self.backend == "triton":
             return self._embed_triton(images)
         else:  # pytorch
             return self._embed_pytorch_base64(images, model_name, pretrained)
@@ -248,9 +281,47 @@ class InferenceClient:
                 return embeddings
         
         except Exception as e:
-            logger.error(f"Failed to embed images with Triton: {e}")
+            logger.error(f"Failed to embed images with Triton HTTP: {e}")
             raise
-    
+
+    def _embed_triton_grpc(self, images: List[Image.Image]) -> np.ndarray:
+        """Embed images using Triton gRPC backend (HTTP/2 + protobuf binary).
+
+        Advantages over HTTP:
+        - Persistent connection (no TCP handshake per call)
+        - HTTP/2 multiplexing for concurrent requests
+        - Slightly smaller wire format (protobuf vs HTTP headers)
+        """
+        if not TRITONCLIENT_GRPC_AVAILABLE:
+            logger.warning(
+                "tritonclient[grpc] not installed, falling back to HTTP. "
+                "Install with: pip install tritonclient[grpc]"
+            )
+            return self._embed_triton(images)
+
+        # Preprocess images into [batch, C, H, W] float32
+        batch = []
+        for img in images:
+            img_resized = img.resize((224, 224), Image.BILINEAR)
+            img_array = np.array(img_resized).astype(np.float32) / 255.0
+            img_array = np.transpose(img_array, (2, 0, 1))  # HWC -> CHW
+            batch.append(img_array)
+        batch_array = np.array(batch, dtype=np.float32)
+
+        try:
+            client = grpcclient.InferenceServerClient(url=self.grpc_url)
+            inputs = [grpcclient.InferInput("image", batch_array.shape, "FP32")]
+            inputs[0].set_data_from_numpy(batch_array)
+            outputs = [grpcclient.InferRequestedOutput("embedding")]
+
+            result = client.infer("openclip_vit_b32", inputs, outputs=outputs)
+            embeddings = result.as_numpy("embedding")
+            return embeddings
+
+        except Exception as e:
+            logger.error(f"Failed to embed images with Triton gRPC: {e}")
+            raise
+
     def embed_images_files(
         self,
         image_paths: List[Path],
@@ -273,8 +344,8 @@ class InferenceClient:
         Returns:
             Array of embeddings, shape (n_images, embedding_dim)
         """
-        if self.backend == "triton":
-            # For Triton, load images and use base64 method
+        if self.backend in ("triton", "triton_grpc"):
+            # For Triton backends, load images and use tensor method
             images = [Image.open(path) for path in image_paths]
             return self.embed_images_base64(images, model_name, pretrained)
         

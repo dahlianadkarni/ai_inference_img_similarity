@@ -1,7 +1,7 @@
 # ML Inference Infrastructure: Executive Summary
 
 > **Project:** Photo Near-Duplicate Detection — Inference Infrastructure Deep-Dive  
-> **Duration:** Steps 1–6, culminating February 15, 2026  
+> **Duration:** Steps 1–7, culminating February 20, 2026  
 > **Model:** OpenCLIP ViT-B/32 (335MB, 512-dim embeddings)  
 > **Goal:** Hands-on exploration of production ML inference patterns
 
@@ -31,6 +31,7 @@ The embedding step is the bottleneck — and the entire infrastructure project f
 | **5B** | TensorRT Execution Provider (FP16) | 6.6× faster GPU compute vs ONNX CUDA EP |
 | **6A** | 3-way backend comparison (A100 + RTX 4080) | PyTorch wins client-side; Triton wins server-side |
 | **6B** | Multi-GPU scaling study (4× RTX 4080) | Only 1.8× scaling (45% efficiency) — network-bound |
+| **7** | 5-way gRPC vs HTTP comparison (A100 + RTX 4090) | gRPC slower at batch=1; HTTP wins under concurrency; PyTorch still leads |
 
 ---
 
@@ -83,6 +84,18 @@ PyTorch (56.9ms) beats Triton (182.9ms) for remote clients despite Triton being 
 
 *TRT EP performance varies by GPU: 2.0ms on RTX 4080, 29.1ms on A100.*
 
+### Step 7 — gRPC vs HTTP, batch=1 p50 (A100, Massachusetts)
+
+| Backend | Latency | vs PyTorch |
+|---------|--------:|-----------:|
+| PyTorch HTTP (JPEG) | **64.2ms** | — |
+| Triton ONNX HTTP | 208.7ms | 3.2× |
+| Triton ONNX gRPC | 217.5ms | 3.4× |
+| Triton TRT HTTP | 171.4ms | 2.7× |
+| Triton TRT gRPC | 200.2ms | 3.1× |
+
+*gRPC was slower than HTTP at batch=1 on both A100 and RTX 4090. PyTorch still wins by 2.7–3.4×.*
+
 ---
 
 ## Skills & Technologies Demonstrated
@@ -92,7 +105,7 @@ PyTorch (56.9ms) beats Triton (182.9ms) for remote clients despite Triton being 
 - **Cloud GPU:** Vast.ai deployment, CUDA runtime configuration, multi-GPU orchestration
 - **Benchmarking:** Client vs server-side metrics, Prometheus, controlled A/B comparisons
 - **Performance Analysis:** Profiling, bottleneck identification, serialization optimization
-- **API Design:** FastAPI, gRPC, binary protocols, stateless service architecture
+- **API Design:** FastAPI, gRPC (tritonclient), binary protocols, stateless service architecture
 
 ---
 

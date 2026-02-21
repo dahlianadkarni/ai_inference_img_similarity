@@ -20,7 +20,7 @@ pydantic>=2.5.0
 python-multipart>=0.0.6
 jinja2>=3.1.0
 httpx>=0.25.0  # HTTP client for inference service communication
-tritonclient[http]>=2.41.0  # Triton client with binary tensor support
+tritonclient[http,grpc]>=2.41.0  # Triton client with binary tensor and gRPC support
 
 # Development Tools (Optional)
 # pytest>=7.4.0

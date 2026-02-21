@@ -16,7 +16,8 @@
 7. [Step 5B: TensorRT Optimization](#7-step-5b-tensorrt-optimization)
 8. [Step 6A: 3-Way Backend Comparison](#8-step-6a-3-way-backend-comparison)
 9. [Step 6B: Multi-GPU Scaling Study](#9-step-6b-multi-gpu-scaling-study)
-10. [Key Learnings & Takeaways](#10-key-learnings--takeaways)
+10. [Step 7: gRPC vs HTTP Protocol Comparison](#10-step-7-grpc-vs-http-protocol-comparison)
+11. [Key Learnings & Takeaways](#11-key-learnings--takeaways)
 
 ---
 
@@ -512,7 +513,63 @@ But the **client-side** latency is 416ms at peak — meaning **95% of time is ne
 
 ---
 
-## 10. Key Learnings & Takeaways
+## 10. Step 7: gRPC vs HTTP Protocol Comparison
+
+### Motivation
+
+Steps 6A/6B established that 97% of client-side latency is transport overhead (602KB float tensor transfer). The natural next question: does gRPC (HTTP/2 + protobuf framing + persistent connections) cut into that 178ms overhead?
+
+### Setup
+
+5-way comparison on the same GPU instance — all backends tested back-to-back:
+
+| # | Backend | Protocol | Payload/image |
+|---|---------|----------|---------------|
+| 1 | PyTorch FastAPI | HTTP/1.1 | ~10 KB (JPEG) |
+| 2 | Triton ONNX EP | HTTP/1.1 binary | ~602 KB (FP32) |
+| 3 | Triton ONNX EP | gRPC (HTTP/2) | ~602 KB (FP32) |
+| 4 | Triton TRT EP | HTTP/1.1 binary | ~602 KB (FP32) |
+| 5 | Triton TRT EP | gRPC (HTTP/2) | ~602 KB (FP32) |
+
+Run on two instances: **A100 SXM4 80GB** (Massachusetts, $0.894/hr) and **RTX 4090** (Pennsylvania, $0.391/hr).
+
+### Results: A100 SXM4 (Massachusetts)
+
+| Backend | b=1 p50 | b=32 p50 | conc=16 img/s |
+|---------|--------:|---------:|--------------:|
+| **PyTorch HTTP** | **64.2ms** | **659.4ms** | **30.5** |
+| Triton ONNX HTTP | 208.7ms | 5266.9ms | **43.6** |
+| Triton ONNX gRPC | 217.5ms | 3126.8ms | 7.5 |
+| Triton TRT HTTP | 171.4ms | 2640.2ms | 22.4 |
+| Triton TRT gRPC | 200.2ms | 2224.1ms | 15.4 |
+
+### Three Surprising Findings
+
+**1. gRPC is slower at batch=1 — not faster.** Both ONNX and TRT gRPC were 4–14% slower than their HTTP counterparts at single-image latency. Persistent connections don’t help when 602KB bandwidth is the bottleneck, not TCP handshake cost.
+
+**2. gRPC wins for large batches (batch≥4).** At batch=32, ONNX gRPC was 1.68× faster than ONNX HTTP. HTTP/2 header compression and framing efficiency pay off when payloads are multi-megabyte.
+
+**3. HTTP scales better under concurrency.** ONNX HTTP hit 43.6 img/s at conc=16, while ONNX gRPC ‘degraded’ to 7.5 img/s — a 5.8× gap. The Python `tritonclient.grpc` client introduces channel contention under concurrent load. This is a client library limitation, not a fundamental HTTP/2 weakness.
+
+### RTX 4090 Results Confirm the Pattern
+
+| Backend | b=1 p50 | vs A100 |
+|---------|--------:|--------:|
+| PyTorch HTTP | 137.2ms | 2.1× slower |
+| Triton ONNX HTTP | 272.1ms | 1.3× slower |
+| Triton ONNX gRPC | 318.5ms | 1.5× slower |
+
+PyTorch latency scales with GPU speed (2.1× gap). Triton baselines are only 1.3–1.6× worse — confirming they remain **transport-bound** (602KB bandwidth) regardless of GPU tier. Cost-efficiency: RTX 4090 at $0.391/hr is 2.3× cheaper with 1.3–2.1× worse latency — broadly fair value.
+
+### What I Learned
+
+- **Bandwidth, not connection overhead, is the bottleneck.** Even with persistent HTTP/2 channels, gRPC cannot escape the physics of transferring 602KB per image. The only fix is changing the input format.
+- **Protocol matters more for batch workloads.** gRPC is a good choice for batch≥4 serial inference; HTTP is better for concurrent single-image requests with the current tritonclient.
+- **Consumer vs datacenter GPU trade-off is consistent.** Both A100 and RTX 4090 show the same ordering: PyTorch wins, then TRT HTTP, then ONNX HTTP. The ratios scale predictably with GPU tier.
+
+---
+
+## 11. Key Learnings & Takeaways
 
 ### Infrastructure Lessons
 
@@ -520,7 +577,9 @@ But the **client-side** latency is 416ms at peak — meaning **95% of time is ne
 
 2. **Measure, then optimize.** The Step 4 "Triton is slow" narrative was wrong. Profiling revealed the real bottleneck (JSON serialization), which was a 1,000× improvement opportunity.
 
-3. **Protocol design is an architecture decision.** The choice of data format (JPEG vs raw tensors) determines performance more than the inference backend.
+3. **Protocol design is an architecture decision.** The choice of data format (JPEG vs raw tensors) determines performance more than the inference backend. Step 7 confirmed this further: switching from HTTP to gRPC doesn’t help if the payload stays at 602KB.
+
+4. **gRPC is not a free performance upgrade.** At batch=1, gRPC is marginally *slower* than HTTP due to framing overhead with the current Python client. It helps for large batch serial workloads but hurts under high concurrency due to channel contention.
 
 4. **The same model can perform very differently** depending on the serving framework, execution provider, and GPU architecture.
 
@@ -539,14 +598,14 @@ But the **client-side** latency is 416ms at peak — meaning **95% of time is ne
 
 ### The Journey in Numbers
 
-| Metric | Start (Step 1) | End (Step 6) |
+| Metric | Start (Step 1) | End (Step 7) |
 |--------|:-:|:-:|
-| Backends supported | 1 (local Python) | 4 (local, PyTorch API, Triton ONNX, Triton TRT) |
+| Backends supported | 1 (local Python) | 5 (local, PyTorch API, Triton ONNX HTTP/gRPC, Triton TRT HTTP/gRPC) |
 | Deployment targets | macOS only | macOS + any cloud GPU |
-| Fastest GPU compute | N/A | **2.0ms** (TRT EP on RTX 4080) |
-| Largest deployment | 1 process | 4× GPU, 3 simultaneous backends |
-| Documentation pages | 1 (README) | 12+ detailed technical docs |
-| Benchmark data points | 0 | 1000+ across 6 steps |
+| Fastest GPU compute | N/A | **2.7ms** (TRT EP gRPC on RTX 4090) |
+| Largest deployment | 1 process | 4× GPU, 5 simultaneous backends |
+| Documentation pages | 1 (README) | 14+ detailed technical docs |
+| Benchmark data points | 0 | 1500+ across 7 steps |
 
 ---
 

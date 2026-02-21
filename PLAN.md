@@ -81,3 +81,53 @@ Step 6: Final Comparison & Multi-GPU Scaling (Optional)
     - **Optimization paths:** JPEG base64 input (5-6× faster), local deployment (14× faster), NVLink GPUs (2-3× better scaling)
     - See `STEP_6B_RESULTS.md` for complete analysis
     - **Value**: Proves that multi-GPU doesn't solve network-bound workloads; validated infrastructure decision-making
+
+**Step 7: 5-Way Protocol Comparison with gRPC** - ✅ COMPLETE
+    - Motivation: gRPC (HTTP/2 + protobuf) should reduce per-call overhead vs HTTP/1.1 for the 602KB tensor payload bottleneck identified in Step 6A
+    - **5 backends compared on same GPU instance (step6a docker-compose):**
+        1. PyTorch FastAPI — HTTP/1.1 + base64 JPEG (~10KB/image)
+        2. Triton ONNX HTTP — HTTP/1.1 + binary FP32 (~602KB/image)
+        3. Triton ONNX gRPC — HTTP/2 + binary FP32 (~602KB/image)
+        4. Triton TRT  HTTP — HTTP/1.1 + binary FP32 (~602KB/image)
+        5. Triton TRT  gRPC — HTTP/2 + binary FP32 (~602KB/image)
+    - **Why 5-way?** GPU and TRT vs ONNX differences are already known from Step 6A.
+      The new question is: within each Triton backend, does gRPC reduce the 178ms transport overhead?
+      Including PyTorch gives a reference point for what an optimized input format can achieve.
+    - **Client changes:**
+        - Added `triton_grpc` backend to `src/inference_service/client.py` using `tritonclient.grpc`
+        - gRPC URL auto-derived as HTTP_PORT+1 (e.g. 8003 HTTP → 8004 gRPC), or set via `TRITON_GRPC_URL` env var
+    - **Benchmark script:** `scripts/benchmark_grpc_vs_http.py`
+        - All 5 backends benchmarked on the same Vast.ai instance
+        - Batch sizes: 1, 4, 8, 16, 32  |  Concurrency: 1, 8, 16
+        - Records p50/p95/p99 latency, img/s throughput, server-side GPU compute from Triton metrics
+        - Saves raw JSON to `benchmark_results/step7_5way_<timestamp>.json`
+    - **Expected findings to measure:**
+        - gRPC vs HTTP overhead isolation (same GPU compute, different transport)
+        - Whether HTTP/2 multiplexing improves concurrent throughput
+        - PyTorch JPEG input as lower bound on client-side latency (10KB vs 602KB)
+    - **Requirements:** `tritonclient[http,grpc]>=2.41.0` (updated in requirements.txt)
+    - **Test instance:** Vast.ai A100 SXM4 80GB — IP `207.180.148.74` (Massachusetts, USA) — Instance ID 31781954
+    - **Port mappings:** PyTorch 47150, ONNX HTTP 47088, ONNX gRPC 47037, TRT HTTP 47008, TRT gRPC 47045
+    - **Results (30 iterations, A100 SXM4 80GB, 2026-02-20):**
+        - **PyTorch wins outright:** 64.2ms batch-1, 48.5 img/s batch-32 — 3× faster than best Triton serial
+        - **gRPC is slower for batch=1:** 0.86–0.96× vs HTTP; TCP handshake is NOT the bottleneck
+        - **gRPC wins from batch=4+:** 1.4–1.7× speedup for ONNX; HTTP/2 framing pays off at multi-MB sizes
+        - **HTTP scales better concurrently:** ONNX HTTP 43.6 img/s at conc=16 vs ONNX gRPC 7.5 img/s (client channel contention)
+        - **TRT engine anomaly:** TRT HTTP shows ~1658ms GPU metric (engine compiling); TRT gRPC (post-cache) = 3.6ms
+    - **Key finding:** gRPC does NOT reduce the 178ms transport overhead at batch=1. The bottleneck is 602KB payload bandwidth. Input format (JPEG base64) is the only path to <100ms remote latency.
+    - Raw data: `benchmark_results/step7_5way_20260220_221313.json`
+    - See `STEP_7_GRPC_RESULTS_A100.md` for full A100 analysis
+
+**Step 7B: RTX 4090 Repeat — Pennsylvania** - ✅ COMPLETE
+    - Repeating 5-way benchmark on consumer-grade RTX 4090 to compare against A100
+    - Slower GPU compute → transport overhead is a smaller fraction of total latency — different gRPC tradeoff expected
+    - **Test instance:** Vast.ai RTX 4090 — IP `173.185.79.174` (Pennsylvania, USA) — $0.391/hr
+    - **Port mappings:** PyTorch 50616, ONNX HTTP 50680, ONNX gRPC 50764, TRT HTTP 50048, TRT gRPC 50286
+    - **Results (30 iterations, RTX 4090, 2026-02-20):**
+        - **PyTorch concurrent peak:** 49.1 img/s at conc=16 (vs 30.5 on A100) — FastAPI async + JPEG scales well
+        - **gRPC worse at batch=1 than A100:** 11–17% slower vs HTTP (vs 4–14% on A100); H5 confirmed
+        - **gRPC ONNX wins at batch=8+:** 2.0× speedup (only from b=8 vs b=4 on A100); slower GPU shifts crossover point
+        - **HTTP still wins under concurrency:** ONNX HTTP 32.2 img/s vs ONNX gRPC 4.0 img/s at conc=16 (8× gap vs 5.8× on A100)
+        - **Cost-efficiency:** RTX 4090 latency is 1.3–2.1× worse than A100 at 2.3× lower cost — broadly fair
+    - Raw data: `benchmark_results/step7_5way_20260220_232454.json`
+    - See `STEP_7_GRPC_RESULTS_RTX_4090.md` for full analysis with cross-GPU comparison

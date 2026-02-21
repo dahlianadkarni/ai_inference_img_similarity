@@ -8,7 +8,7 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 
 **📚 Documentation:**
 - **[COMMANDS_CHEATSHEET.md](COMMANDS_CHEATSHEET.md)** — Quick cheatsheet commands to start servers, etc.
-- **[PLAN.md](PLAN.md)** — 6-step infrastructure learning plan (all steps complete ✅)
+- **[PLAN.md](PLAN.md)** — 7-step infrastructure learning plan (Steps 1–6 complete ✅, Step 7 in progress 🔄)
 - **[DOCKER_README.md](DOCKER_README.md)** — Step 2: Docker containerization guide with security best practices
 - **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Step 3: Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
 - **[TRITON_SETUP.md](TRITON_SETUP.md)** — Step 4: Triton Inference Server setup, benchmarking, and trade-offs
@@ -18,6 +18,7 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 - **[STEP_6A_A100_RESULTS.md](STEP_6A_A100_RESULTS.md)** — Step 6A: 3-way backend comparison on A100 SXM4
 - **[STEP_6A_RTX4080_RESULTS.md](STEP_6A_RTX4080_RESULTS.md)** — Step 6A: RTX 4080 comparison (consumer vs datacenter GPU)
 - **[STEP_6B_RESULTS.md](STEP_6B_RESULTS.md)** — Step 6B: 4x RTX 4080 multi-GPU scaling study
+- **[STEP_7_GRPC_RESULTS.md](STEP_7_GRPC_RESULTS.md)** — Step 7: 5-way protocol comparison (PyTorch, ONNX HTTP/gRPC, TRT HTTP/gRPC) (🔄 in progress)
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8081)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
 
@@ -200,14 +201,22 @@ The app uses a **client-service architecture** — the same pattern used by prod
 | Backend | Docker Image | Ports | Status |
 |---------|-------------|-------|--------|
 | PyTorch + FastAPI | `Dockerfile.gpu` | 8002 | ✅ Step 3 |
-| NVIDIA Triton (ONNX CUDA EP) | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4/5A |
-| NVIDIA Triton (TensorRT EP) | `Dockerfile.tensorrt` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 5B |
+| NVIDIA Triton (ONNX CUDA EP) via HTTP | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4/5A |
+| NVIDIA Triton (TensorRT EP) via HTTP | `Dockerfile.tensorrt` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 5B |
 | All 3 backends (unified) | `Dockerfile.step6a-all` | 8002 (PyTorch), 8003/8004/8005 (Triton) | ✅ Step 6A |
+| NVIDIA Triton (ONNX CUDA EP) via gRPC | same `Dockerfile.triton` | 8004 (gRPC) | 🔄 Step 7 |
+| NVIDIA Triton (TRT EP) via gRPC | same `Dockerfile.tensorrt` | 8021 (gRPC, step6a) | 🔄 Step 7 |
 
 ```bash
 # Switch backends with environment variables:
-export INFERENCE_BACKEND=pytorch   # or "triton"
-export INFERENCE_SERVICE_URL=http://localhost:8002  # or :8003 for Triton
+export INFERENCE_BACKEND=pytorch       # plain PyTorch FastAPI
+export INFERENCE_BACKEND=triton        # Triton via HTTP binary protocol
+export INFERENCE_BACKEND=triton_grpc   # Triton via gRPC (Step 7)
+
+export INFERENCE_SERVICE_URL=http://localhost:8002   # PyTorch
+export INFERENCE_SERVICE_URL=http://localhost:8003   # Triton HTTP
+# gRPC URL is auto-derived as HTTP_PORT+1 (e.g. 8003 → 8004)
+# Override with: export TRITON_GRPC_URL=localhost:8004
 python -m src.ui.main
 ```
 

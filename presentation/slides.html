@@ -668,8 +668,96 @@
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 15: COST ANALYSIS ═══════════════════ -->
+<!-- ═══════════════════ SLIDE 15: STEP 7 — 5-WAY PROTOCOL COMPARISON ═══════════════════ -->
 <section class="slide" data-slide="14">
+  <span class="badge">Step 7</span>
+  <h2>5-Way Protocol Comparison — gRPC vs HTTP</h2>
+  <p class="dim center">Same GPU, 5 backends — isolating transport overhead from GPU compute<br>A100 SXM4 80GB · Massachusetts &nbsp;|&nbsp; RTX 4090 · Pennsylvania &nbsp;|&nbsp; 30 iterations each</p>
+  <div class="gap">
+    <h3>Serial p50 Latency, batch=1 (ms) — A100</h3>
+    <div class="bar-chart gap-sm">
+      <div class="bar-row">
+        <div class="bar-label">PyTorch HTTP (JPEG)</div>
+        <div class="bar-track"><div class="bar-fill green" style="width:29.5%"></div></div>
+        <div class="bar-value winner">64.2ms</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">TRT HTTP</div>
+        <div class="bar-track"><div class="bar-fill orange" style="width:78.7%"></div></div>
+        <div class="bar-value orange">171.4ms</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ONNX HTTP</div>
+        <div class="bar-track"><div class="bar-fill red" style="width:95.8%"></div></div>
+        <div class="bar-value red">208.7ms</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">TRT gRPC</div>
+        <div class="bar-track"><div class="bar-fill red" style="width:91.8%"></div></div>
+        <div class="bar-value red">200.2ms</div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">ONNX gRPC</div>
+        <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+        <div class="bar-value red">217.5ms</div>
+      </div>
+    </div>
+  </div>
+  <div class="insight warn gap">
+    <strong>gRPC was 4–14% slower than HTTP at batch=1</strong> — TCP handshake is not the bottleneck. 602KB payload bandwidth dominates.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 16: STEP 7 — gRPC FINDINGS ═══════════════════ -->
+<section class="slide" data-slide="15">
+  <span class="badge">Step 7</span>
+  <h2>gRPC vs HTTP — When Does It Matter?</h2>
+  <div class="cols gap">
+    <div>
+      <h3>gRPC speedup vs HTTP (same backend)</h3>
+      <table>
+        <tr><th>Batch</th><th>ONNX gRPC/HTTP</th><th>TRT gRPC/HTTP</th></tr>
+        <tr><td>b=1</td><td class="red">0.96× (slower)</td><td class="red">0.86× (slower)</td></tr>
+        <tr><td>b=4</td><td class="orange">1.41×</td><td class="red">0.93×</td></tr>
+        <tr><td>b=8</td><td class="green">1.41×</td><td class="green">1.54×</td></tr>
+        <tr><td>b=32</td><td class="green"><b>1.68×</b></td><td class="green">1.19×</td></tr>
+      </table>
+      <p class="dim small">gRPC helps for batch≥4 serial workloads.<br>HTTP wins at batch=1 and under concurrency.</p>
+    </div>
+    <div>
+      <h3>Concurrent throughput (batch=1, conc=16)</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">ONNX HTTP</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:100%"></div></div>
+          <div class="bar-value winner">43.6 img/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TRT HTTP</div>
+          <div class="bar-track"><div class="bar-fill orange" style="width:51.4%"></div></div>
+          <div class="bar-value orange">22.4 img/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">TRT gRPC</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:35.3%"></div></div>
+          <div class="bar-value red">15.4 img/s</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">ONNX gRPC</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:17.2%"></div></div>
+          <div class="bar-value red">7.5 img/s</div>
+        </div>
+      </div>
+      <p class="dim small">Python tritonclient gRPC client has channel contention under concurrent load.</p>
+    </div>
+  </div>
+  <div class="insight gap">
+    <strong>H4 confirmed again:</strong> PyTorch JPEG still wins (64ms) vs best Triton (171ms). Input format is the only fix for sub-100ms remote latency.
+  </div>
+</section>
+
+<!-- ═══════════════════ SLIDE 17: COST ANALYSIS ═══════════════════ -->
+<section class="slide" data-slide="16">
   <h2>Cost-Efficiency Analysis</h2>
   <div class="cols gap">
     <div>
@@ -712,8 +800,8 @@
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 16: TOP 5 FINDINGS ═══════════════════ -->
-<section class="slide" data-slide="15">
+<!-- ═══════════════════ SLIDE 18: TOP 5 FINDINGS ═══════════════════ -->
+<section class="slide" data-slide="17">
   <h2>Top 5 Findings</h2>
   <div class="left full gap" style="max-width: 900px;">
     <div style="margin-bottom:1rem;">
@@ -736,11 +824,15 @@
       <h3>5. Protocol Design > Compute Optimization</h3>
       <p class="dim">PyTorch (57ms) beats Triton (183ms) remotely despite Triton being 12.8× faster at GPU compute — because of efficient JPEG input.</p>
     </div>
+    <div>
+      <h3>6. gRPC Doesn't Solve Bandwidth Bottlenecks</h3>
+      <p class="dim">Step 7: gRPC was 4–17% <em>slower</em> than HTTP at batch=1. HTTP wins under concurrency. The 602KB tensor is the problem — not the connection protocol.</p>
+    </div>
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 17: TECHNOLOGIES ═══════════════════ -->
-<section class="slide" data-slide="16">
+<!-- ═══════════════════ SLIDE 19: TECHNOLOGIES ═══════════════════ -->
+<section class="slide" data-slide="18">
   <h2>Technologies &amp; Skills</h2>
   <div class="cols-3 gap">
     <div>
@@ -775,14 +867,14 @@
     </div>
   </div>
   <div class="cols-3 gap" style="max-width:700px;">
-    <div class="metric-card"><div class="value">6</div><div class="label">Infra Steps</div></div>
-    <div class="metric-card"><div class="value">12+</div><div class="label">Technical Docs</div></div>
-    <div class="metric-card"><div class="value">1000+</div><div class="label">Benchmark Data Points</div></div>
+    <div class="metric-card"><div class="value">7</div><div class="label">Infra Steps</div></div>
+    <div class="metric-card"><div class="value">14+</div><div class="label">Technical Docs</div></div>
+    <div class="metric-card"><div class="value">1500+</div><div class="label">Benchmark Data Points</div></div>
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 18: THANK YOU ═══════════════════ -->
-<section class="slide" data-slide="17">
+<!-- ═══════════════════ SLIDE 20: THANK YOU ═══════════════════ -->
+<section class="slide" data-slide="19">
   <h1>Thank You</h1>
   <p class="medium dim gap-sm">Questions?</p>
   <div class="gap" style="max-width: 700px;">
@@ -802,7 +894,7 @@
 <!-- ── Navigation ── -->
 <div class="nav">
   <button id="prev" aria-label="Previous slide">←</button>
-  <span class="counter" id="counter">1 / 18</span>
+  <span class="counter" id="counter">1 / 20</span>
   <button id="next" aria-label="Next slide">→</button>
 </div>
 

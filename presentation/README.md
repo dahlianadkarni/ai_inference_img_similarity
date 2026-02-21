@@ -42,9 +42,9 @@
 ```
 presentation/
 ├── README.md                    ← You are here
-├── slides.html                  ← Interactive HTML slide deck (18 slides)
+├── slides.html                  ← Interactive HTML slide deck (20 slides)
 ├── 01_EXECUTIVE_SUMMARY.md      ← Quick overview + top findings
-├── 02_TECHNICAL_DEEP_DIVE.md    ← Full technical walkthrough (Steps 1-6)
+├── 02_TECHNICAL_DEEP_DIVE.md    ← Full technical walkthrough (Steps 1-7)
 ├── 03_ARCHITECTURE.md           ← Architecture diagrams (ASCII art)
 └── 04_BENCHMARK_RESULTS.md      ← Complete benchmark data tables
 ```
@@ -59,6 +59,8 @@ presentation/
 | [STEP_6A_A100_RESULTS.md](../STEP_6A_A100_RESULTS.md) | A100 3-way comparison |
 | [STEP_6A_RTX4080_RESULTS.md](../STEP_6A_RTX4080_RESULTS.md) | RTX 4080 comparison |
 | [STEP_6B_RESULTS.md](../STEP_6B_RESULTS.md) | Multi-GPU scaling study |
+| [STEP_7_GRPC_RESULTS_A100.md](../STEP_7_GRPC_RESULTS_A100.md) | 5-way gRPC vs HTTP, A100 Massachusetts |
+| [STEP_7_GRPC_RESULTS_RTX_4090.md](../STEP_7_GRPC_RESULTS_RTX_4090.md) | 5-way gRPC vs HTTP, RTX 4090 Pennsylvania |
 | [DOCKER_README.md](../DOCKER_README.md) | Docker containerization guide |
 | [GPU_DEPLOYMENT.md](../GPU_DEPLOYMENT.md) | Cloud GPU deployment guide |
 | [TRITON_SETUP.md](../TRITON_SETUP.md) | Triton Inference Server setup |
