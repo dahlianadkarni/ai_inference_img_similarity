@@ -21,7 +21,7 @@
 ### For a Live Demo (10-15 min)
 1. Open **slides.html** in a browser
 2. Use ← → arrow keys (or swipe on touch devices)
-3. 18 slides covering the full journey
+3. 20 slides covering the full journey
 4. Refer to the deep-dive doc for detailed Q&A
 
 ### For a Technical Interview (20-30 min)

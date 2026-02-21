@@ -533,15 +533,31 @@ Steps 6A/6B established that 97% of client-side latency is transport overhead (6
 
 Run on two instances: **A100 SXM4 80GB** (Massachusetts, $0.894/hr) and **RTX 4090** (Pennsylvania, $0.391/hr).
 
+> **Two ways to measure throughput (used throughout this section):**
+>
+> - **Batch-32 throughput** — *sequential* requests, one at a time, each sending 32 images in a single payload. Tests raw GPU utilization: can batching amortize the 602KB-per-image transfer cost? Higher = better bulk/offline processing.
+> - **conc=16 img/s** — 16 *simultaneous* single-image requests in-flight at once. Simulates multiple concurrent clients. Tests the server's ability to pipeline and queue requests. Higher = better real-time multi-user serving.
+>
+> They answer different questions and can point in opposite directions (as gRPC demonstrates below).
+
 ### Results: A100 SXM4 (Massachusetts)
 
-| Backend | b=1 p50 | b=32 p50 | conc=16 img/s |
-|---------|--------:|---------:|--------------:|
-| **PyTorch HTTP** | **64.2ms** | **659.4ms** | **30.5** |
-| Triton ONNX HTTP | 208.7ms | 5266.9ms | **43.6** |
-| Triton ONNX gRPC | 217.5ms | 3126.8ms | 7.5 |
-| Triton TRT HTTP | 171.4ms | 2640.2ms | 22.4 |
-| Triton TRT gRPC | 200.2ms | 2224.1ms | 15.4 |
+**Latency, GPU compute, and batch throughput:**
+
+| Metric | PyTorch | ONNX HTTP | ONNX gRPC | TRT HTTP | TRT gRPC |
+|--------|:-------:|:---------:|:---------:|:--------:|:--------:|
+| **Client latency (single)** | **64.2ms** ⚡ | 208.7ms | 217.5ms | 171.4ms | 200.2ms |
+| **Server GPU compute** | ~10–15ms (est.) | 8.67ms | **4.04ms** ⚡ | 1657ms† | **3.63ms** ⚡ |
+| **Batch-32 throughput** | **48.5 img/s** | 6.08 img/s | 10.23 img/s | 12.12 img/s | 14.39 img/s |
+
+†TRT HTTP GPU compute includes TRT engine compilation in this run; post-compile true latency ≈ 3.6ms (see TRT gRPC server metric).
+
+**Concurrent throughput (batch=1 per request):**
+
+| Metric | PyTorch | ONNX HTTP | ONNX gRPC | TRT HTTP | TRT gRPC |
+|--------|:-------:|:---------:|:---------:|:--------:|:--------:|
+| **conc=8 img/s** | 24.0 | 28.8 | 16.6 | **32.4** ⚡ | 14.3 |
+| **conc=16 img/s** | 30.5 | **43.6** ⚡ | 7.5 | 22.4 | 15.4 |
 
 ### Three Surprising Findings
 
@@ -551,15 +567,36 @@ Run on two instances: **A100 SXM4 80GB** (Massachusetts, $0.894/hr) and **RTX 40
 
 **3. HTTP scales better under concurrency.** ONNX HTTP hit 43.6 img/s at conc=16, while ONNX gRPC ‘degraded’ to 7.5 img/s — a 5.8× gap. The Python `tritonclient.grpc` client introduces channel contention under concurrent load. This is a client library limitation, not a fundamental HTTP/2 weakness.
 
-### RTX 4090 Results Confirm the Pattern
+### Results: RTX 4090 (Pennsylvania)
 
-| Backend | b=1 p50 | vs A100 |
-|---------|--------:|--------:|
-| PyTorch HTTP | 137.2ms | 2.1× slower |
-| Triton ONNX HTTP | 272.1ms | 1.3× slower |
-| Triton ONNX gRPC | 318.5ms | 1.5× slower |
+**Latency, GPU compute, and batch throughput:**
 
-PyTorch latency scales with GPU speed (2.1× gap). Triton baselines are only 1.3–1.6× worse — confirming they remain **transport-bound** (602KB bandwidth) regardless of GPU tier. Cost-efficiency: RTX 4090 at $0.391/hr is 2.3× cheaper with 1.3–2.1× worse latency — broadly fair value.
+| Metric | PyTorch | ONNX HTTP | ONNX gRPC | TRT HTTP | TRT gRPC |
+|--------|:-------:|:---------:|:---------:|:--------:|:--------:|
+| **Client latency (single)** | **137.2ms** ⚡ | 272.1ms | 318.5ms | 269.9ms | 312.5ms |
+| **Server GPU compute** | ~10–15ms (est.) | 10.63ms | **4.41ms** ⚡ | 1170ms† | **2.68ms** ⚡ |
+| **Batch-32 throughput** | **39.4 img/s** | 4.75 img/s | 4.84 img/s | 3.50 img/s | 3.79 img/s |
+
+†Same TRT engine compilation artifact as A100. True cached GPU compute ≈ 2.68ms (TRT gRPC server metric).
+
+**Concurrent throughput (batch=1 per request):**
+
+| Metric | PyTorch | ONNX HTTP | ONNX gRPC | TRT HTTP | TRT gRPC |
+|--------|:-------:|:---------:|:---------:|:--------:|:--------:|
+| **conc=8 img/s** | **47.3** ⚡ | 17.5 | 4.1 | 20.1 | 4.2 |
+| **conc=16 img/s** | **49.1** ⚡ | 32.2 | 4.0 | 21.8 | 6.1 |
+
+**Cross-GPU comparison (b=1 serial p50):**
+
+| GPU | PyTorch | ONNX HTTP | ONNX gRPC | TRT HTTP | TRT gRPC |
+|-----|:-------:|:---------:|:---------:|:--------:|:--------:|
+| A100 SXM4 (MA) | **64.2ms** ⚡ | 208.7ms | 217.5ms | 171.4ms | 200.2ms |
+| RTX 4090 (PA) | **137.2ms** ⚡ | 272.1ms | 318.5ms | 269.9ms | 312.5ms |
+| RTX 4090 vs A100 | 2.1× | 1.3× | 1.5× | 1.6× | 1.6× |
+
+PyTorch latency scales with GPU speed (2.1× gap). Triton HTTP baselines are only 1.3–1.6× worse — confirming they remain **transport-bound** (602KB bandwidth) regardless of GPU tier. Cost-efficiency: RTX 4090 at $0.391/hr is 2.3× cheaper with 1.3–2.1× worse serial latency, but actually *faster* under concurrency (49.1 vs 30.5 img/s at conc=16).
+
+
 
 ### What I Learned
 
