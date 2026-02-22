@@ -131,3 +131,17 @@ Step 6: Final Comparison & Multi-GPU Scaling (Optional)
         - **Cost-efficiency:** RTX 4090 latency is 1.3–2.1× worse than A100 at 2.3× lower cost — broadly fair
     - Raw data: `benchmark_results/step7_5way_20260220_232454.json`
     - See `STEP_7_GRPC_RESULTS_RTX_4090.md` for full analysis with cross-GPU comparison
+
+**Step 8: Local Kubernetes (kind)** - 🔄 IN PROGRESS
+    - Goal: deploy the same inference container into a local Kubernetes cluster (kind) to learn K8s orchestration patterns
+    - **Tool**: kind (Kubernetes-in-Docker) + kubectl + metrics-server + hey load generator
+    - **Image**: `photo-duplicate-inference:k8s-cpu` — same `Dockerfile`, new tag, ARM64-native, never pushed to Docker Hub
+    - **Port**: `localhost:8092` (NodePort 30092 via kind extraPortMappings — avoids collision with existing 8002/8003/8004)
+    - **Phase 1 ✅**: kind v0.31.0 cluster created, metrics-server installed + patched for kind TLS, image built and loaded
+    - **Phase 2 ✅**: All manifests applied (`kubectl apply -k k8s/`); 2/2 pods Running; `GET /health → {"status":"ok"}`
+    - **Phase 3 ✅**: HPA deployed (2–6 replicas, 60% CPU target, 3-min scaledown stabilization)
+    - **Phase 4**: kubectl observability practice (logs, exec, top, rolling update, rollback) — pending
+    - **Phase 5**: PodDisruptionBudget + ResourceQuota — deployed alongside Phase 2 ✅
+    - **Phase 6** (optional): Helm chart for multi-environment deploy
+    - See `K8S_PLAN.md` for full phased plan and coexistence notes
+    - See `STEP_8_K8S_RESULTS.md` for live cluster output

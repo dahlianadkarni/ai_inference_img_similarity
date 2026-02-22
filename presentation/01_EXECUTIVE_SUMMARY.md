@@ -1,7 +1,7 @@
 # ML Inference Infrastructure: Executive Summary
 
 > **Project:** Photo Near-Duplicate Detection — Inference Infrastructure Deep-Dive  
-> **Duration:** Steps 1–7, culminating February 20, 2026  
+> **Duration:** Steps 1–8, culminating February 21, 2026  
 > **Model:** OpenCLIP ViT-B/32 (335MB, 512-dim embeddings)  
 > **Goal:** Hands-on exploration of production ML inference patterns
 
@@ -32,6 +32,7 @@ The embedding step is the bottleneck — and the entire infrastructure project f
 | **6A** | 3-way backend comparison (A100 + RTX 4080) | PyTorch wins client-side; Triton wins server-side |
 | **6B** | Multi-GPU scaling study (4× RTX 4080) | Only 1.8× scaling (45% efficiency) — network-bound |
 | **7** | 5-way gRPC vs HTTP comparison (A100 + RTX 4090) | gRPC slower at batch=1; HTTP wins under concurrency; PyTorch still leads |
+| **8** | Local Kubernetes (kind): HPA, PDB, ResourceQuota | 2→4→6 pod scale-up under load; CPU baseline; zero-conflict coexistence with docker-compose |
 
 ---
 
@@ -103,6 +104,7 @@ PyTorch (56.9ms) beats Triton (182.9ms) for remote clients despite Triton being 
 - **ML Serving:** PyTorch, ONNX Runtime, TensorRT, NVIDIA Triton Inference Server
 - **Containerization:** Docker multi-stage builds, NVIDIA Container Toolkit, Docker Compose
 - **Cloud GPU:** Vast.ai deployment, CUDA runtime configuration, multi-GPU orchestration
+- **Kubernetes:** kind cluster, Deployments, HPA (autoscaling), PDB, ResourceQuota, probes
 - **Benchmarking:** Client vs server-side metrics, Prometheus, controlled A/B comparisons
 - **Performance Analysis:** Profiling, bottleneck identification, serialization optimization
 - **API Design:** FastAPI, gRPC (tritonclient), binary protocols, stateless service architecture

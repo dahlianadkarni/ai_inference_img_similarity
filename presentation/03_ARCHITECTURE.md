@@ -257,7 +257,58 @@ Key difference: WHERE preprocessing happens determines WHAT crosses the network.
 
 ---
 
-## 9. Evolution Summary
+## 9. Step 8: Local Kubernetes (kind)
+
+```
+ ┌─ macOS ────────────────────────────────────────────────────────────┐
+ │                                                                    │
+ │  ┌─────────────────────────────────────────────────────────────┐  │
+ │  │  kind cluster (single Docker container — "inference-cluster"│  │
+ │  │                                                             │  │
+ │  │  ┌─ K8s Service ───────────────────────────────────────┐   │  │
+ │  │  │  NodePort 30092 ← host port 8092                   │   │  │
+ │  │  │                                                     │   │  │
+ │  │  │  ┌─ Deployment (HPA: 2–6 replicas) ──────────────┐ │   │  │
+ │  │  │  │                                                │ │   │  │
+ │  │  │  │  Pod 1: photo-duplicate-inference:k8s-cpu     │ │   │  │
+ │  │  │  │  Pod 2: photo-duplicate-inference:k8s-cpu     │ │   │  │
+ │  │  │  │  Pod 3–6: (HPA scales up under load)          │ │   │  │
+ │  │  │  │                                                │ │   │  │
+ │  │  │  │  Resources:  cpu: 500m req / 2000m limit      │ │   │  │
+ │  │  │  │              mem: 1Gi  req / 3Gi  limit       │ │   │  │
+ │  │  │  │                                                │ │   │  │
+ │  │  │  │  Probes: readiness (GET /health, delay:20s)   │ │   │  │
+ │  │  │  │          liveness  (GET /health, delay:60s)   │ │   │  │
+ │  │  │  └────────────────────────────────────────────────┘ │   │  │
+ │  │  │                                                     │   │  │
+ │  │  │  ┌─ HPA ──────────────────────────────────────────┐ │   │  │
+ │  │  │  │  target: 60% CPU utilization                   │ │   │  │
+ │  │  │  │  scaleUp stabilization:   30s                  │ │   │  │
+ │  │  │  │  scaleDown stabilization: 180s                 │ │   │  │
+ │  │  │  └────────────────────────────────────────────────┘ │   │  │
+ │  │  │                                                     │   │  │
+ │  │  │  ┌─ PDB ──────────┐  ┌─ ResourceQuota ───────────┐ │   │  │
+ │  │  │  │ minAvailable:1 │  │ pods:10, cpu req:4        │ │   │  │
+ │  │  │  └────────────────┘  └────────────────────────────┘ │   │  │
+ │  │  └──────────────────────────────────────────────────────┘   │  │
+ │  └─────────────────────────────────────────────────────────────┘  │
+ │                                                                    │
+ │  Port isolation vs docker-compose:                                 │
+ │  • docker-compose PyTorch: 8002                                    │
+ │  • docker-compose Triton:  8003/8004                               │
+ │  • kind K8s:               8092  ← no conflicts                   │
+ └────────────────────────────────────────────────────────────────────┘
+```
+
+**HPA Scale Events (from load test):**
+```
+SuccessfulRescale: 2→4 replicas (cpu: 210% of request → 397%)
+SuccessfulRescale: 4→6 replicas (still above 60% target, 30s later)
+```
+
+---
+
+## 10. Evolution Summary
 
 ```
 Step 1      Step 2        Step 3         Step 4          Step 5          Step 6
@@ -274,6 +325,20 @@ Monolith → Split →     Container →   Add Triton →   Optimize →     Com
                         NVIDIA RT     Dyn. batching  TensorRT EP     RTX 4080
                                       gRPC           Profiling       Multi-GPU
                                       Prometheus     FP16            Scaling
+
+Step 7              Step 8
+──────              ──────
+
+gRPC vs HTTP →   Kubernetes
+
+ ┌───┐ ┌───┐    ┌───┐ ┌───┐
+ │CLI│ │5×B│    │CLI│ │K8s│
+ │   │ │END│    │   │ │HPA│
+ └───┘ └───┘    └───┘ └───┘
+ A100 +         kind cluster
+ RTX 4090       2–6 pods
+ 5 protocols    HPA / PDB
+ gRPC vs HTTP   ResourceQuota
 ```
 
 ---

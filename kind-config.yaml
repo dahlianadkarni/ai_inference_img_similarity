@@ -1,0 +1,13 @@
+# kind cluster config for local Kubernetes (Step 8)
+# Creates a single-node cluster with host port mapping so that
+# localhost:8092 → NodePort 30092 → Pod :8002
+# (8092 avoids collision with existing docker-compose ports 8002/8003/8004)
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: inference-cluster
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30092   # matches nodePort in k8s/service.yaml
+        hostPort: 8092         # host port — use curl localhost:8092
+        protocol: TCP

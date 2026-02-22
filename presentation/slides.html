@@ -248,7 +248,7 @@
 
 <!-- ═══════════════════ SLIDE 4: THE JOURNEY ═══════════════════ -->
 <section class="slide" data-slide="3">
-  <h2>The Learning Journey: 6 Steps</h2>
+  <h2>The Learning Journey: 8 Steps</h2>
   <div class="timeline gap full left">
     <div class="timeline-item">
       <div class="timeline-dot done">1</div>
@@ -273,6 +273,14 @@
     <div class="timeline-item">
       <div class="timeline-dot done">6</div>
       <div><strong>Comparison &amp; Multi-GPU Scaling</strong><br><span class="dim">3-way backend comparison on A100 + RTX 4080. 4× GPU scaling study. Cost analysis.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">7</div>
+      <div><strong>gRPC vs HTTP Protocol Comparison</strong><br><span class="dim">5-way comparison on A100 + RTX 4090. gRPC slower at batch=1. HTTP wins under concurrency.</span></div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done">8</div>
+      <div><strong>Local Kubernetes (kind)</strong><br><span class="dim">kind cluster, HPA autoscaling (2→6 pods), PDB, ResourceQuota. CPU baseline vs GPU comparison.</span></div>
     </div>
   </div>
 </section>
@@ -756,8 +764,61 @@
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 17: COST ANALYSIS ═══════════════════ -->
+<!-- ═══════════════════ SLIDE 17: STEP 8 — KUBERNETES ═══════════════════ -->
 <section class="slide" data-slide="16">
+  <span class="badge">Step 8</span>
+  <h2>Local Kubernetes (kind) — HPA Autoscaling</h2>
+  <div class="cols gap">
+    <div>
+      <h3>Setup</h3>
+      <table>
+        <tr><th>Component</th><th>Detail</th></tr>
+        <tr><td>kind v0.31.0</td><td>Kubernetes-in-Docker</td></tr>
+        <tr><td>Kubernetes</td><td>v1.35.0</td></tr>
+        <tr><td>Image</td><td><code>photo-duplicate-inference:k8s-cpu</code></td></tr>
+        <tr><td>Port</td><td>8092 (NodePort — no conflict)</td></tr>
+        <tr><td>HPA</td><td>min=2, max=6, target=60% CPU</td></tr>
+      </table>
+      <h3 class="gap-sm">HPA Scale Events (600 req, conc=30)</h3>
+      <table>
+        <tr><th>Event</th><th>Replicas</th><th>CPU</th></tr>
+        <tr><td>Idle</td><td>2</td><td class="green">1%</td></tr>
+        <tr><td>Load start</td><td>2</td><td class="orange">210%</td></tr>
+        <tr><td>SuccessfulRescale</td><td class="green">2→4</td><td class="red">397%</td></tr>
+        <tr><td>SuccessfulRescale</td><td class="green">4→6 (max)</td><td class="red">397%</td></tr>
+        <tr><td>Post-load</td><td>6</td><td class="orange">145%</td></tr>
+        <tr><td>After stabilization</td><td>6→2</td><td class="green">1%</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>CPU vs GPU Performance</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <div class="bar-label">A100 GPU p50</div>
+          <div class="bar-track"><div class="bar-fill green" style="width:6.3%"></div></div>
+          <div class="bar-value winner">64ms</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">CPU (kind) p50</div>
+          <div class="bar-track"><div class="bar-fill red" style="width:100%"></div></div>
+          <div class="bar-value red">1,020ms</div>
+        </div>
+      </div>
+      <p class="dim small">16× slower — expected for ViT-B/32 CPU inference.<br>Kubernetes learning, not GPU performance, was the goal.</p>
+      <h3 class="gap-sm">What I Learned</h3>
+      <ul class="dim small">
+        <li>HPA scales within <strong>30 seconds</strong> of CPU pressure</li>
+        <li>Readiness probes protect the Service under saturation</li>
+        <li>scaleDown stabilization prevents oscillation</li>
+        <li>kind runs real Kubernetes at zero cloud cost</li>
+        <li>Port isolation: all backends run simultaneously (8002, 8003/8004, 8092)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ SLIDE 18: COST ANALYSIS ═════════════════════ -->
+<section class="slide" data-slide="17">
   <h2>Cost-Efficiency Analysis</h2>
   <div class="cols gap">
     <div>
@@ -800,8 +861,8 @@
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 18: TOP 5 FINDINGS ═══════════════════ -->
-<section class="slide" data-slide="17">
+<!-- ═════════════════════ SLIDE 19: TOP 5 FINDINGS ═════════════════════ -->
+<section class="slide" data-slide="18">
   <h2>Top 5 Findings</h2>
   <div class="left full gap" style="max-width: 900px;">
     <div style="margin-bottom:1rem;">
@@ -831,8 +892,8 @@
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 19: TECHNOLOGIES ═══════════════════ -->
-<section class="slide" data-slide="18">
+<!-- ═════════════════════ SLIDE 20: TECHNOLOGIES ═════════════════════ -->
+<section class="slide" data-slide="19">
   <h2>Technologies &amp; Skills</h2>
   <div class="cols-3 gap">
     <div>
@@ -853,6 +914,7 @@
         <li>Docker Compose</li>
         <li>Cloud GPU (Vast.ai)</li>
         <li>Multi-GPU orchestration</li>
+        <li>Kubernetes (kind, HPA, PDB)</li>
       </ul>
     </div>
     <div>
@@ -867,14 +929,14 @@
     </div>
   </div>
   <div class="cols-3 gap" style="max-width:700px;">
-    <div class="metric-card"><div class="value">7</div><div class="label">Infra Steps</div></div>
-    <div class="metric-card"><div class="value">14+</div><div class="label">Technical Docs</div></div>
-    <div class="metric-card"><div class="value">1500+</div><div class="label">Benchmark Data Points</div></div>
+    <div class="metric-card"><div class="value">8</div><div class="label">Infra Steps</div></div>
+    <div class="metric-card"><div class="value">16+</div><div class="label">Technical Docs</div></div>
+    <div class="metric-card"><div class="value">1700+</div><div class="label">Benchmark Data Points</div></div>
   </div>
 </section>
 
-<!-- ═══════════════════ SLIDE 20: THANK YOU ═══════════════════ -->
-<section class="slide" data-slide="19">
+<!-- ═════════════════════ SLIDE 21: THANK YOU ═════════════════════ -->
+<section class="slide" data-slide="20">
   <h1>Thank You</h1>
   <p class="medium dim gap-sm">Questions?</p>
   <div class="gap" style="max-width: 700px;">
@@ -886,7 +948,7 @@
       <tr><td>Docker images</td><td>Published to Docker Hub, ready to deploy</td></tr>
     </table>
   </div>
-  <p class="dim small gap">Built with Python, FastAPI, PyTorch, ONNX Runtime, TensorRT, NVIDIA Triton, Docker</p>
+  <p class="dim small gap">Built with Python, FastAPI, PyTorch, ONNX Runtime, TensorRT, NVIDIA Triton, Docker, Kubernetes</p>
 </section>
 
 </div><!-- /deck -->
@@ -894,7 +956,7 @@
 <!-- ── Navigation ── -->
 <div class="nav">
   <button id="prev" aria-label="Previous slide">←</button>
-  <span class="counter" id="counter">1 / 20</span>
+  <span class="counter" id="counter">1 / 21</span>
   <button id="next" aria-label="Next slide">→</button>
 </div>
 

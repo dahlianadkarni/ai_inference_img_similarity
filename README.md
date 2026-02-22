@@ -8,7 +8,9 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 
 **📚 Documentation:**
 - **[COMMANDS_CHEATSHEET.md](COMMANDS_CHEATSHEET.md)** — Quick cheatsheet commands to start servers, etc.
-- **[PLAN.md](PLAN.md)** — 7-step infrastructure learning plan (Steps 1–6 complete ✅, Step 7 in progress 🔄)
+- **[PLAN.md](PLAN.md)** — 8-step infrastructure learning plan (Steps 1–7 complete ✅, Step 8 in progress 🔄)
+- **[K8S_PLAN.md](K8S_PLAN.md)** — Step 8: Local Kubernetes phased implementation plan (kind, HPA, PDB, Helm)
+- **[STEP_8_K8S_RESULTS.md](STEP_8_K8S_RESULTS.md)** — Step 8: Live cluster output, pod startup, HPA events
 - **[DOCKER_README.md](DOCKER_README.md)** — Step 2: Docker containerization guide with security best practices
 - **[GPU_DEPLOYMENT.md](GPU_DEPLOYMENT.md)** — Step 3: Cloud GPU deployment guide (Vast.ai, RunPod, Lambda Labs)
 - **[TRITON_SETUP.md](TRITON_SETUP.md)** — Step 4: Triton Inference Server setup, benchmarking, and trade-offs
@@ -18,7 +20,8 @@ Finds groups of near-duplicate photos using OpenCLIP embeddings, then lets you r
 - **[STEP_6A_A100_RESULTS.md](STEP_6A_A100_RESULTS.md)** — Step 6A: 3-way backend comparison on A100 SXM4
 - **[STEP_6A_RTX4080_RESULTS.md](STEP_6A_RTX4080_RESULTS.md)** — Step 6A: RTX 4080 comparison (consumer vs datacenter GPU)
 - **[STEP_6B_RESULTS.md](STEP_6B_RESULTS.md)** — Step 6B: 4x RTX 4080 multi-GPU scaling study
-- **[STEP_7_GRPC_RESULTS.md](STEP_7_GRPC_RESULTS.md)** — Step 7: 5-way protocol comparison (PyTorch, ONNX HTTP/gRPC, TRT HTTP/gRPC) (🔄 in progress)
+- **[STEP_7_GRPC_RESULTS_A100.md](STEP_7_GRPC_RESULTS_A100.md)** — Step 7: 5-way protocol comparison on A100 SXM4
+- **[STEP_7_GRPC_RESULTS_RTX_4090.md](STEP_7_GRPC_RESULTS_RTX_4090.md)** — Step 7B: RTX 4090 repeat + cross-GPU comparison
 - **[DEMO_SETUP_CLEAN.md](DEMO_SETUP_CLEAN.md)** — Demo mode setup (separate server on port 8081)
 - **[docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md)** — Project history and implementation notes
 
@@ -204,8 +207,9 @@ The app uses a **client-service architecture** — the same pattern used by prod
 | NVIDIA Triton (ONNX CUDA EP) via HTTP | `Dockerfile.triton` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 4/5A |
 | NVIDIA Triton (TensorRT EP) via HTTP | `Dockerfile.tensorrt` | 8003 (HTTP), 8004 (gRPC), 8005 (metrics) | ✅ Step 5B |
 | All 3 backends (unified) | `Dockerfile.step6a-all` | 8002 (PyTorch), 8003/8004/8005 (Triton) | ✅ Step 6A |
-| NVIDIA Triton (ONNX CUDA EP) via gRPC | same `Dockerfile.triton` | 8004 (gRPC) | 🔄 Step 7 |
-| NVIDIA Triton (TRT EP) via gRPC | same `Dockerfile.tensorrt` | 8021 (gRPC, step6a) | 🔄 Step 7 |
+| NVIDIA Triton (ONNX CUDA EP) via gRPC | same `Dockerfile.triton` | 8004 (gRPC) | ✅ Step 7 |
+| NVIDIA Triton (TRT EP) via gRPC | same `Dockerfile.tensorrt` | 8021 (gRPC, step6a) | ✅ Step 7 |
+| PyTorch FastAPI (Kubernetes / kind) | `photo-duplicate-inference:k8s-cpu` | 8092 (NodePort, host) | ✅ Step 8 |
 
 ```bash
 # Switch backends with environment variables:

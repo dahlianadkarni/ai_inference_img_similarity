@@ -215,12 +215,13 @@ This architecture is exactly what these production systems assume:
    - OpenAI-compatible API
    → Your code: Call vLLM instead of your service
 
-4. KUBERNETES DEPLOYMENTS
+4. KUBERNETES DEPLOYMENTS  ✓ DONE (Step 8)
    - Client and service as separate containers
-   - Inference service can scale independently
-   - Load balancing across service instances
-   - Different resource limits per service
+   - Inference service can scale independently   (HPA: 2→6 pods under load)
+   - Load balancing across service instances     (K8s Service + NodePort)
+   - Different resource limits per service       (ResourceQuota, PDB)
    → Your code: No changes needed, just deploy as containers
+   → Implemented: kind cluster, see K8S_PLAN.md and STEP_8_K8S_RESULTS.md
 
 5. DISTRIBUTED SYSTEMS
    - Service on different machine
@@ -264,10 +265,10 @@ It's the same: client → (HTTP) → service → (inference) → embeddings
    □ What's the overhead of HTTP vs. direct calls?
 
 4. PREPARE FOR REAL DISTRIBUTION
-   □ Extract inference service to separate repo
-   □ Create Dockerfile for service
-   □ Create Docker Compose for local development
-   □ Plan: What would change for GPU server?
+   ✓ Extract inference service to separate repo
+   ✓ Create Dockerfile for service
+   ✓ Create Docker Compose for local development
+   ✓ Plan: What would change for GPU server?
 
 5. LEARN PRODUCTION PATTERNS
    □ Add request/response validation
