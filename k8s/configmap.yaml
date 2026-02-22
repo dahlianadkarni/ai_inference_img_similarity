@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-config
+  namespace: inference
+data:
+  MODEL_NAME: "ViT-B-32"
+  MODEL_PRETRAINED: "openai"
+  HOST: "0.0.0.0"
+  PORT: "8002"
+  LOG_LEVEL: "info"

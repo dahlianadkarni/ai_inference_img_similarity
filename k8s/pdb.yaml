@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: inference-pdb
+  namespace: inference
+spec:
+  # Guarantees at least 1 pod stays alive during kubectl drain, node maintenance,
+  # or rolling updates. Prevents a 2-replica deploy from going to 0 momentarily.
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: inference-service

@@ -117,4 +117,66 @@ python -m src.ui.main
 | 8003 | Local inference — Triton HTTP (ONNX, Docker) |
 | 8004 | Local inference — Triton gRPC (ONNX, Docker) |
 | 8005 | Local inference — Triton metrics (ONNX, Docker) |
-| varies | Remote inference — TensorRT (Vast.ai, GPU required) |
+| 8092 | Local inference — K8s kind (NodePort, PyTorch CPU) |
+
+---
+
+## Kubernetes (kind) — Step 8
+
+### Cluster status
+```bash
+export PATH="/opt/homebrew/bin:$PATH"
+kubectl get nodes
+kubectl get pods -n inference
+kubectl get hpa -n inference
+```
+
+### Apply / redeploy manifests
+```bash
+kubectl apply -k k8s/
+kubectl rollout status deployment/inference-deploy -n inference
+```
+
+### Smoke test
+```bash
+curl localhost:8092/health
+# {"status":"ok"}
+```
+
+### Watch HPA live
+```bash
+watch -n2 kubectl get hpa -n inference
+kubectl describe hpa inference-hpa -n inference   # scale events
+```
+
+### Load test (triggers HPA scale-up)
+```bash
+# Requires a valid base64 JPEG payload file:
+python -c "
+import base64, json
+with open('test_image.jpg','rb') as f:
+    b64 = base64.b64encode(f.read()).decode()
+print(json.dumps({'images': [b64]}))
+" > /tmp/payload.json
+
+hey -n 600 -c 30 -m POST \
+  -H 'Content-Type: application/json' \
+  -D /tmp/payload.json \
+  http://localhost:8092/embed/base64
+```
+
+### Clean benchmark (50 req, conc=5)
+```bash
+hey -n 50 -c 5 -m POST \
+  -H 'Content-Type: application/json' \
+  -D /tmp/payload.json \
+  http://localhost:8092/embed/base64
+```
+
+### Tear down / recreate cluster
+```bash
+kind delete cluster --name inference-cluster
+kind create cluster --config kind-config.yaml
+kind load docker-image photo-duplicate-inference:k8s-cpu --name inference-cluster
+kubectl apply -k k8s/
+```

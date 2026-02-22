@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-deploy
+  namespace: inference
+  labels:
+    app: inference-service
+    step: "step8-k8s"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inference-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0        # always keep current replicas alive during update
+  template:
+    metadata:
+      labels:
+        app: inference-service
+    spec:
+      containers:
+        - name: inference
+          image: photo-duplicate-inference:k8s-cpu
+          imagePullPolicy: Never   # use the locally-loaded image; never pull from Docker Hub
+          ports:
+            - containerPort: 8002
+              name: http
+          envFrom:
+            - configMapRef:
+                name: inference-config
+          resources:
+            requests:
+              cpu: "500m"          # HPA reads: actual / 500m → utilization %
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "3Gi"
+          # readinessProbe: don't route traffic until model is fully loaded (~10-20s)
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 6    # 30s grace window before marking unready
+          # livenessProbe: restart a pod that has become stuck after startup
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+      # Give pods time to finish in-flight requests before termination
+      terminationGracePeriodSeconds: 30

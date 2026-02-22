@@ -17,7 +17,8 @@
 8. [Step 6A: 3-Way Backend Comparison](#8-step-6a-3-way-backend-comparison)
 9. [Step 6B: Multi-GPU Scaling Study](#9-step-6b-multi-gpu-scaling-study)
 10. [Step 7: gRPC vs HTTP Protocol Comparison](#10-step-7-grpc-vs-http-protocol-comparison)
-11. [Key Learnings & Takeaways](#11-key-learnings--takeaways)
+11. [Step 8: Local Kubernetes (kind)](#11-step-8-local-kubernetes-kind)
+12. [Key Learnings & Takeaways](#12-key-learnings--takeaways)
 
 ---
 
@@ -606,7 +607,86 @@ PyTorch latency scales with GPU speed (2.1× gap). Triton HTTP baselines are onl
 
 ---
 
-## 11. Key Learnings & Takeaways
+---
+
+## 11. Step 8: Local Kubernetes (kind)
+
+**Goal:** Understand Kubernetes primitives (HPA, PDB, ResourceQuota) using a local kind cluster — no cloud cost, CPU-only, learning-focused.
+
+### Architecture
+
+```
+macOS client
+     │
+     ▼  localhost:8092
+kind cluster (single node — Docker container)
+     │
+     ▼  NodePort 30092
+K8s Service
+     │
+     ├── Pod 1: photo-duplicate-inference:k8s-cpu  (500m–2000m CPU)
+     ├── Pod 2: photo-duplicate-inference:k8s-cpu  (500m–2000m CPU)
+     └── ... HPA scales to Pod 3–6 under load
+```
+
+### Stack
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| kind | v0.31.0 | Kubernetes-in-Docker |
+| Kubernetes | v1.35.0 | cluster version |
+| kubectl | v1.34.1 | + bundled kustomize |
+| metrics-server | latest | patched `--kubelet-insecure-tls` for kind |
+| Image | `photo-duplicate-inference:k8s-cpu` (388 MB) | CPU-only, ARM64 |
+
+### Manifests (`k8s/`)
+
+| File | Purpose |
+|------|---------|
+| `namespace.yaml` | namespace: inference |
+| `configmap.yaml` | MODEL_NAME, HOST, PORT env vars |
+| `deployment.yaml` | 2 replicas, Never pull, probes, 500m–2000m CPU |
+| `service.yaml` | NodePort 30092 |
+| `hpa.yaml` | min=2, max=6, target=60% CPU, scaleDown stabilization=180s |
+| `pdb.yaml` | minAvailable=1 |
+| `resourcequota.yaml` | pods:10, requests.cpu:4, limits.cpu:8 |
+| `kustomization.yaml` | `kubectl apply -k k8s/` |
+
+### Key Observations
+
+**HPA triggered scale-up in two steps under 600-request load:**
+```
+SuccessfulRescale: New size: 4; reason: cpu resource utilization above target
+SuccessfulRescale: New size: 6; reason: cpu resource utilization above target
+```
+
+**CPU is expected to be slow** — ViT-B/32 inference takes ~400–1000ms per image on Apple Silicon without GPU acceleration:
+
+| Metric | CPU (kind) | GPU A100 (Step 6A) | Ratio |
+|--------|:-:|:-:|:-:|
+| p50 latency | 1,020ms | 64ms | **16× slower** |
+| Throughput | 3.5 req/s | ~30 req/s | **8× lower** |
+| Cost | $0/hr | $0.85/hr | ♾️ cheaper |
+
+**Port isolation prevents any conflict with existing docker-compose:**
+
+| Service | Port | Coexists? |
+|---------|:----:|:---------:|
+| docker-compose PyTorch | 8002 | ✅ |
+| docker-compose Triton ONNX | 8003/8004 | ✅ |
+| kind K8s PyTorch | 8092 | ✅ |
+
+### What I Learned
+
+- **HPA responds to actual CPU pressure within ~30 seconds** on a single-node kind cluster — the scale-up from 2→4→6 replicas happened in two consecutive events 30s apart, exactly as configured.
+- **Readiness probes under CPU saturation are protective.** When pods saturate their CPU limit (1988m/2000m), the readiness probe fails and the pod is removed from Service endpoints — preventing new requests from hitting an overloaded pod.
+- **The 3-minute scaleDown stabilization window is essential.** Without it, HPA would oscillate; with it, the cluster holds 6 replicas through the post-load cooldown before returning to 2.
+- **Kubernetes primitives are just policies.** Deployment, HPA, PDB, and ResourceQuota are all declarative YAML; the complexity is in understanding the interactions (e.g., PDB + HPA max can prevent full scaleDown).
+- **kind is an excellent learning environment.** Zero cloud cost, real Kubernetes API surface, fast iteration — the only trade-off is no GPU passthrough.
+
+---
+
+## 12. Key Learnings & Takeaways
 
 ### Infrastructure Lessons
 
@@ -629,20 +709,22 @@ PyTorch latency scales with GPU speed (2.1× gap). Triton HTTP baselines are onl
 | **ML Serving** | ONNX export, Triton config, TensorRT EP, dynamic batching tuning |
 | **Docker** | Multi-stage builds, cross-platform (ARM→x86), NVIDIA runtime, health checks |
 | **GPU Deployment** | Vast.ai provisioning, CUDA configuration, multi-GPU orchestration |
+| **Kubernetes** | kind cluster, Deployments, HPA, PDB, ResourceQuota, readiness/liveness probes |
 | **Benchmarking** | Controlled experiments, server-side vs client-side metrics, Prometheus |
 | **Performance Engineering** | Profiling, bottleneck identification, serialization optimization |
 | **API Design** | Stateless services, binary protocols, graceful degradation (auto mode) |
 
 ### The Journey in Numbers
 
-| Metric | Start (Step 1) | End (Step 7) |
+| Metric | Start (Step 1) | End (Step 8) |
 |--------|:-:|:-:|
-| Backends supported | 1 (local Python) | 5 (local, PyTorch API, Triton ONNX HTTP/gRPC, Triton TRT HTTP/gRPC) |
-| Deployment targets | macOS only | macOS + any cloud GPU |
+| Backends supported | 1 (local Python) | 6 (local, PyTorch API, Triton ONNX HTTP/gRPC, Triton TRT HTTP/gRPC, K8s) |
+| Deployment targets | macOS only | macOS + any cloud GPU + local K8s |
 | Fastest GPU compute | N/A | **2.7ms** (TRT EP gRPC on RTX 4090) |
-| Largest deployment | 1 process | 4× GPU, 5 simultaneous backends |
-| Documentation pages | 1 (README) | 14+ detailed technical docs |
-| Benchmark data points | 0 | 1500+ across 7 steps |
+| Largest deployment | 1 process | 4× GPU, 5 simultaneous backends + K8s (6 pods) |
+| Documentation pages | 1 (README) | 16+ detailed technical docs |
+| Benchmark data points | 0 | 1700+ across 8 steps |
+| K8s objects managed | 0 | 7 (Deployment, Service, HPA, PDB, ResourceQuota, ConfigMap, Namespace) |
 
 ---
 

@@ -17,6 +17,7 @@
 9. [Step 7B: 5-Way Protocol Comparison (RTX 4090)](#9-step-7b-5-way-protocol-comparison-rtx-4090)
 10. [Cross-Step Comparison Tables](#10-cross-step-comparison-tables)
 11. [ONNX Model Profile](#11-onnx-model-profile)
+12. [Step 8: Local Kubernetes (kind) — CPU Baseline](#12-step-8-local-kubernetes-kind--cpu-baseline)
 
 ---
 
@@ -29,6 +30,7 @@
 | RTX 4080 | Consumer | 16 GB | Vast.ai | 6A, 6B |
 | 4× RTX 4080 | Consumer (multi) | 4×16 GB | Vast.ai | 6B |
 | RTX 4090 | Consumer | 24 GB | Vast.ai | 7B |
+| Apple M-series (CPU) | Local (kind) | — | Local machine | 8 |
 
 **Client:** MacBook Pro (macOS), benchmarking over internet to Vast.ai datacenters.
 
@@ -452,6 +454,68 @@
 
 ---
 
+---
+
+## 12. Step 8: Local Kubernetes (kind) — CPU Baseline
+
+**Infrastructure:** kind v0.31.0, Kubernetes v1.35.0, Apple Silicon ARM64, macOS 15.7.3  
+**Image:** `photo-duplicate-inference:k8s-cpu` (388 MB, CPU-only, same `Dockerfile` as GPU image)  
+**Port:** `localhost:8092` (NodePort — fully isolated from docker-compose ports 8002/8003/8004)  
+**Date:** 2026-02-21
+
+### 12.1 Single-Image Inference Latency (CPU, concurrency=5)
+
+| Metric | CPU (local kind) | GPU A100 (remote) | CPU/GPU ratio |
+|--------|:-:|:-:|:-:|
+| **p50** | **1,020ms** | 64ms | **16× slower** |
+| p75 | 1,200ms | — | — |
+| p90 | 3,450ms | — | — |
+| p95 | 4,150ms | — | — |
+| Fastest | 400ms | — | — |
+| Throughput | 3.5 req/s | ~30 req/s | **8× lower** |
+
+*High p90/p95 are expected: CPU can process ~1 image/s; at concurrency=5 the queue builds up.*
+
+### 12.2 HPA Scale-Up Under Load (600 requests, concurrency=30)
+
+| Event | CPU % of request | Replicas | Time from load start |
+|-------|:-:|:-:|:-:|
+| Idle (baseline) | 1% | 2 | — |
+| Load start | **210%** | 2 | ~15s |
+| First scale decision | **397% (1988m/2000m)** | 2→4 | ~30s |
+| Second scale decision | 397% | 4→6 (max) | ~60s |
+| Post-load (tapering) | 145% | 6 | ~90s |
+| Idle (after stabilization) | 1% | 6→2 | +3 min |
+
+### 12.3 HPA Events (`kubectl describe hpa`)
+
+```
+Normal  SuccessfulRescale  New size: 4; reason: cpu resource utilization above target
+Normal  SuccessfulRescale  New size: 6; reason: cpu resource utilization above target
+```
+
+### 12.4 K8s vs docker-compose Coexistence
+
+| Setup | Port | Manager | Running simultaneously? |
+|-------|:----:|---------|:---:|
+| docker-compose PyTorch | 8002 | docker-compose | ✅ |
+| docker-compose Triton ONNX | 8003/8004 | docker-compose | ✅ |
+| kind K8s PyTorch | **8092** | kubectl | ✅ |
+
+*Verified: both setups run side-by-side. Zero interference.*
+
+### 12.5 Resource Utilization at Peak Load
+
+```
+NAME                                CPU(cores)   MEMORY
+inference-deploy-...-8zh2d          1988m        942Mi   ← saturated at 2000m limit
+inference-deploy-...-dgtcg          1989m        1134Mi  ← saturated at 2000m limit
+inference-deploy-...-6ckwm          311m         353Mi   ← new pod starting up
+inference-deploy-...-x2tsj          309m         484Mi   ← new pod starting up
+```
+
+---
+
 ## Raw Data Files
 
 | File | Contents |
@@ -468,4 +532,5 @@
 
 ---
 
-*All benchmarks conducted remotely from macOS client to Vast.ai GPU instances, February 14–15, 2026.*
+*GPU benchmarks: macOS client → Vast.ai GPU instances, February 14–20, 2026.*  
+*Step 8 K8s benchmarks: local kind cluster on Apple Silicon, February 21, 2026.*
