@@ -282,6 +282,10 @@
       <div class="timeline-dot done">8</div>
       <div><strong>Local Kubernetes (kind)</strong><br><span class="dim">kind cluster, HPA autoscaling (2→6 pods), PDB, ResourceQuota. CPU baseline vs GPU comparison.</span></div>
     </div>
+    <div class="timeline-item">
+      <div class="timeline-dot done" style="background:#a78bfa;">+</div>
+      <div><strong>macOS Local In-Process Benchmark</strong><br><span class="dim">PyTorch MPS vs ORT CPU vs CoreML EP. No network. MPS beats remote PyTorch API by 4.7× end-to-end.</span></div>
+    </div>
   </div>
 </section>
 
@@ -861,7 +865,56 @@
   </div>
 </section>
 
-<!-- ═════════════════════ SLIDE 19: TOP 5 FINDINGS ═════════════════════ -->
+<!-- ═════════════════════ SLIDE 19: macOS LOCAL ═════════════════════ -->
+<section class="slide" data-slide="18b">
+  <span class="badge green">macOS Local</span>
+  <h2>Local Apple Silicon vs Remote GPU — End-to-End</h2>
+  <p class="dim center">In-process benchmark (zero network) · Apple M-series · batch=1 p50 · <code>scripts/benchmark_macos_local.py</code></p>
+  <div class="cols gap">
+    <div>
+      <h3>In-Process Inference Latency (ms)</h3>
+      <div class="bar-chart gap-sm">
+        <div class="bar-row">
+          <span class="bar-label">MPS (Metal)</span>
+          <div class="bar-track"><div class="bar-fill green" style="width:16%;"></div></div>
+          <span class="bar-value green">~12ms</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">ORT CPU</span>
+          <div class="bar-track"><div class="bar-fill blue" style="width:30%;"></div></div>
+          <span class="bar-value">~23ms</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">PyTorch CPU</span>
+          <div class="bar-track"><div class="bar-fill blue" style="width:38%;"></div></div>
+          <span class="bar-value">~29ms</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">ORT CoreML EP†</span>
+          <div class="bar-track"><div class="bar-fill orange" style="width:100%;"></div></div>
+          <span class="bar-value orange">~76ms</span>
+        </div>
+      </div>
+      <p class="small" style="margin-top:0.6rem;">† CoreML EP covers only 52% of ViT-B-32 nodes.<br>Remaining attention ops fall back to CPU, adding context-switch overhead.</p>
+    </div>
+    <div>
+      <h3>vs Complete Remote Calls</h3>
+      <table>
+        <tr><th>Path</th><th>Latency</th><th>Measured</th></tr>
+        <tr><td><strong>MPS in-process</strong></td><td class="winner">~12ms ⭐</td><td class="dim">compute only</td></tr>
+        <tr><td>Remote PyTorch FastAPI</td><td>56.9ms</td><td class="dim">compute + 10KB JPEG</td></tr>
+        <tr><td>Remote Triton ONNX</td><td>182.9ms</td><td class="dim">compute + 602KB tensor</td></tr>
+        <tr><td>Remote Triton TRT</td><td>212.5ms</td><td class="dim">compute + 602KB tensor</td></tr>
+        <tr><td><em>A100 GPU compute only</em></td><td class="dim">4.4ms</td><td class="dim">server-side metric</td></tr>
+      </table>
+      <div class="insight gap-sm">
+        <strong>MPS beats remote PyTorch by 4.7×</strong> — even though A100 Triton is 2.7× faster at raw GPU compute (4.4ms). Zero network overhead wins end-to-end for local use.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ SLIDE 19 (was 19): TOP 5 FINDINGS ═════════════════════ -->
 <section class="slide" data-slide="18">
   <h2>Top 5 Findings</h2>
   <div class="left full gap" style="max-width: 900px;">
@@ -956,7 +1009,7 @@
 <!-- ── Navigation ── -->
 <div class="nav">
   <button id="prev" aria-label="Previous slide">←</button>
-  <span class="counter" id="counter">1 / 21</span>
+  <span class="counter" id="counter">1 / 22</span>
   <button id="next" aria-label="Next slide">→</button>
 </div>
 

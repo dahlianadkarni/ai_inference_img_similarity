@@ -1,0 +1,297 @@
+{
+  "metadata": {
+    "script": "scripts/benchmark_macos_local.py",
+    "timestamp": "20260223_113948",
+    "platform": "macOS-15.7.3-arm64-arm-64bit",
+    "machine": "arm64",
+    "python_version": "3.9.6",
+    "model": "ViT-B-32",
+    "pretrained": "openai",
+    "onnx_model_path": "model_repository/openclip_vit_b32/1/model.onnx",
+    "iterations": 3,
+    "warmup_iterations": 5,
+    "batch_sizes": [
+      1,
+      4
+    ],
+    "note": "In-process benchmark, no HTTP/serialization overhead. 'inference' timing = model forward pass only, directly comparable to server-side GPU compute metrics from remote step6a/step7 runs.",
+    "remote_gpu_context": {
+      "source": "step6a A100 SXM4 80GB (benchmark_results/step6a_a100_remote.json)",
+      "pytorch_fastapi_gpu_compute_ms": "~10-15 (estimated)",
+      "triton_onnx_cuda_ep_ms": 4.4,
+      "triton_trt_ep_ms": 2.0
+    }
+  },
+  "results": [
+    {
+      "backend": "pytorch_cpu",
+      "device": "cpu",
+      "framework": "pytorch",
+      "model": "ViT-B-32/openai",
+      "model_load_ms": 2264.8,
+      "iterations": 3,
+      "warmup_iterations": 5,
+      "batch_results": {
+        "1": {
+          "preprocess": {
+            "p50_ms": 0.5778330000003606,
+            "p95_ms": 0.6659961000000436,
+            "p99_ms": 0.6738328200000154,
+            "mean_ms": 0.5924166666666508,
+            "min_ms": 0.5236249999995835,
+            "max_ms": 0.6757920000000084
+          },
+          "inference": {
+            "p50_ms": 28.731624999999816,
+            "p95_ms": 29.96942560000022,
+            "p99_ms": 30.079452320000257,
+            "mean_ms": 29.021514333333148,
+            "min_ms": 28.225958999999357,
+            "max_ms": 30.106959000000266
+          },
+          "total": {
+            "p50_ms": 29.2552499999994,
+            "p95_ms": 30.541837800000504,
+            "p99_ms": 30.656201160000602,
+            "mean_ms": 29.6139309999998,
+            "min_ms": 28.901750999999365,
+            "max_ms": 30.684792000000627
+          },
+          "imgs_per_sec_total": 33.8,
+          "imgs_per_sec_inference": 34.5
+        },
+        "4": {
+          "preprocess": {
+            "p50_ms": 2.340166000000643,
+            "p95_ms": 2.8964793999998406,
+            "p99_ms": 2.9459294799997693,
+            "mean_ms": 2.388111000000137,
+            "min_ms": 1.8658750000000168,
+            "max_ms": 2.9582919999997515
+          },
+          "inference": {
+            "p50_ms": 74.06270800000047,
+            "p95_ms": 84.0357205000001,
+            "p99_ms": 84.92221050000006,
+            "mean_ms": 72.18463866666683,
+            "min_ms": 57.34737499999998,
+            "max_ms": 85.14383300000006
+          },
+          "total": {
+            "p50_ms": 75.92858300000049,
+            "p95_ms": 86.88477079999987,
+            "p99_ms": 87.85865415999982,
+            "mean_ms": 74.57274966666697,
+            "min_ms": 59.68754100000062,
+            "max_ms": 88.1021249999998
+          },
+          "imgs_per_sec_total": 53.6,
+          "imgs_per_sec_inference": 55.4
+        }
+      }
+    },
+    {
+      "backend": "pytorch_mps",
+      "device": "mps",
+      "framework": "pytorch",
+      "model": "ViT-B-32/openai",
+      "model_load_ms": 2136.5,
+      "iterations": 3,
+      "warmup_iterations": 5,
+      "batch_results": {
+        "1": {
+          "preprocess": {
+            "p50_ms": 1.1520419999992981,
+            "p95_ms": 1.2210792000008297,
+            "p99_ms": 1.2272158400009658,
+            "mean_ms": 1.0468890000000879,
+            "min_ms": 0.7598749999999654,
+            "max_ms": 1.2287500000009999
+          },
+          "inference": {
+            "p50_ms": 12.174917000001173,
+            "p95_ms": 14.749216699998868,
+            "p99_ms": 14.978043339998663,
+            "mean_ms": 13.061985999999711,
+            "min_ms": 11.975790999999347,
+            "max_ms": 15.035249999998612
+          },
+          "total": {
+            "p50_ms": 13.326959000000471,
+            "p95_ms": 15.970295899999698,
+            "p99_ms": 16.20525917999963,
+            "mean_ms": 14.108874999999799,
+            "min_ms": 12.735665999999313,
+            "max_ms": 16.263999999999612
+          },
+          "imgs_per_sec_total": 70.9,
+          "imgs_per_sec_inference": 76.6
+        },
+        "4": {
+          "preprocess": {
+            "p50_ms": 3.398750000000561,
+            "p95_ms": 4.05818809999996,
+            "p99_ms": 4.116804819999906,
+            "mean_ms": 3.622958333333296,
+            "min_ms": 3.338665999999435,
+            "max_ms": 4.131458999999893
+          },
+          "inference": {
+            "p50_ms": 18.14679199999958,
+            "p95_ms": 18.586028899998475,
+            "p99_ms": 18.625072179998376,
+            "mean_ms": 18.2120139999995,
+            "min_ms": 17.854417000000566,
+            "max_ms": 18.634832999998352
+          },
+          "total": {
+            "p50_ms": 21.485457999999014,
+            "p95_ms": 22.638208599998322,
+            "p99_ms": 22.74067531999826,
+            "mean_ms": 21.834972333332797,
+            "min_ms": 21.253167000001127,
+            "max_ms": 22.766291999998245
+          },
+          "imgs_per_sec_total": 183.2,
+          "imgs_per_sec_inference": 219.6
+        }
+      }
+    },
+    {
+      "backend": "onnx_cpu",
+      "device": "cpu",
+      "framework": "onnxruntime",
+      "provider": "CPUExecutionProvider",
+      "model": "model_repository/openclip_vit_b32/1/model.onnx",
+      "model_load_ms": 442.6,
+      "iterations": 3,
+      "warmup_iterations": 5,
+      "batch_results": {
+        "1": {
+          "preprocess": {
+            "p50_ms": 0.7871250000004437,
+            "p95_ms": 1.6611006000001538,
+            "p99_ms": 1.738787320000128,
+            "mean_ms": 1.0934723333336411,
+            "min_ms": 0.7350830000003583,
+            "max_ms": 1.7582090000001216
+          },
+          "inference": {
+            "p50_ms": 23.207499999999825,
+            "p95_ms": 23.658399999999702,
+            "p99_ms": 23.69847999999969,
+            "mean_ms": 23.28022200000035,
+            "min_ms": 22.924666000001537,
+            "max_ms": 23.708499999999688
+          },
+          "total": {
+            "p50_ms": 24.495625000000132,
+            "p95_ms": 24.664150000001506,
+            "p99_ms": 24.679130000001628,
+            "mean_ms": 24.37369433333399,
+            "min_ms": 23.942583000000184,
+            "max_ms": 24.68287500000166
+          },
+          "imgs_per_sec_total": 41.0,
+          "imgs_per_sec_inference": 43.0
+        },
+        "4": {
+          "preprocess": {
+            "p50_ms": 4.11145900000065,
+            "p95_ms": 4.271920899999948,
+            "p99_ms": 4.286184179999886,
+            "mean_ms": 3.9343613333334324,
+            "min_ms": 3.4018749999997766,
+            "max_ms": 4.28974999999987
+          },
+          "inference": {
+            "p50_ms": 79.11108400000089,
+            "p95_ms": 93.20710899999938,
+            "p99_ms": 94.46008899999924,
+            "mean_ms": 83.12050066666703,
+            "min_ms": 75.47708400000097,
+            "max_ms": 94.77333399999921
+          },
+          "total": {
+            "p50_ms": 83.22254300000154,
+            "p95_ms": 97.47902989999932,
+            "p99_ms": 98.74627317999912,
+            "mean_ms": 87.05486200000045,
+            "min_ms": 78.87895900000075,
+            "max_ms": 99.06308399999908
+          },
+          "imgs_per_sec_total": 45.9,
+          "imgs_per_sec_inference": 48.1
+        }
+      }
+    },
+    {
+      "backend": "onnx_coreml",
+      "device": "coreml",
+      "framework": "onnxruntime",
+      "provider": "CoreMLExecutionProvider",
+      "model": "model_repository/openclip_vit_b32/1/model.onnx",
+      "model_load_ms": 3729.9,
+      "iterations": 3,
+      "warmup_iterations": 5,
+      "batch_results": {
+        "1": {
+          "preprocess": {
+            "p50_ms": 1.0701250000018092,
+            "p95_ms": 1.1262994000006188,
+            "p99_ms": 1.131292680000513,
+            "mean_ms": 0.968847000000513,
+            "min_ms": 0.7038749999992433,
+            "max_ms": 1.1325410000004865
+          },
+          "inference": {
+            "p50_ms": 76.41562499999921,
+            "p95_ms": 76.56082560000037,
+            "p99_ms": 76.57373232000047,
+            "mean_ms": 74.77697266666657,
+            "min_ms": 71.338334,
+            "max_ms": 76.5769590000005
+          },
+          "total": {
+            "p50_ms": 77.28083399999974,
+            "p95_ms": 77.5214327999997,
+            "p99_ms": 77.5428193599997,
+            "mean_ms": 75.74581966666709,
+            "min_ms": 72.40845900000181,
+            "max_ms": 77.5481659999997
+          },
+          "imgs_per_sec_total": 13.2,
+          "imgs_per_sec_inference": 13.4
+        },
+        "4": {
+          "preprocess": {
+            "p50_ms": 2.4931660000007128,
+            "p95_ms": 2.8214787999999658,
+            "p99_ms": 2.8506621599998994,
+            "mean_ms": 2.530166333333028,
+            "min_ms": 2.239374999998489,
+            "max_ms": 2.8579579999998828
+          },
+          "inference": {
+            "p50_ms": 190.44516700000003,
+            "p95_ms": 191.57590360000043,
+            "p99_ms": 191.67641352000047,
+            "mean_ms": 188.21174999999948,
+            "min_ms": 182.48854199999798,
+            "max_ms": 191.70154100000047
+          },
+          "total": {
+            "p50_ms": 193.3031249999999,
+            "p95_ms": 193.87713689999904,
+            "p99_ms": 193.92816017999897,
+            "mean_ms": 190.7419163333325,
+            "min_ms": 184.9817079999987,
+            "max_ms": 193.94091599999896
+          },
+          "imgs_per_sec_total": 21.0,
+          "imgs_per_sec_inference": 21.3
+        }
+      }
+    }
+  ]
+}

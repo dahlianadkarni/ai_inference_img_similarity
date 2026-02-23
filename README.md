@@ -31,7 +31,7 @@ This is a personal project focussed on learning AI Inference frameworks and GPU 
 
 ## 📊 Key Learnings: Backend Comparison Summary
 
-After benchmarking 3 inference backends (PyTorch, Triton ONNX, Triton TensorRT) across multiple GPUs, here are the key takeaways:
+After benchmarking 3 inference backends (PyTorch, Triton ONNX, Triton TensorRT) across multiple remote GPUs — and also benchmarking in-process locally on macOS Apple Silicon — here are the key takeaways:
 
 ### Performance by Backend
 
@@ -40,6 +40,7 @@ After benchmarking 3 inference backends (PyTorch, Triton ONNX, Triton TensorRT) 
 | **PyTorch FastAPI** | Remote clients | 56.9ms | **56.9ms** ⚡ | Client-facing API (accepts JPEG) |
 | **Triton ONNX CUDA EP** | Server-side | **4.4ms** ⚡ | 182.9ms | Local inference, batch processing |
 | **Triton TensorRT EP** | Consumer GPUs | 2.0ms (RTX 4080) | 336ms | RTX GPUs, max GPU efficiency |
+| **PyTorch MPS (local)** | Local macOS use | **~12ms** (M-series) | 0ms (in-process) | No server needed; auto-selected by app |
 
 ### Top 5 Insights
 
@@ -53,7 +54,10 @@ After benchmarking 3 inference backends (PyTorch, Triton ONNX, Triton TensorRT) 
 
 5. **Production Recommendation**: Use PyTorch FastAPI for client-facing APIs + Triton ONNX as a local inference backend for batch workloads.
 
-**📈 Full benchmark data:** [presentation/04_BENCHMARK_RESULTS.md](presentation/04_BENCHMARK_RESULTS.md)
+6. **Local Apple Silicon Beats Remote GPU End-to-End**: PyTorch MPS (~12ms in-process) is 4.7× faster than a remote PyTorch FastAPI call (56.9ms), even though A100 Triton is 2.7× faster at raw GPU compute (4.4ms). Zero network overhead wins. The app auto-selects MPS on macOS.
+
+**📈 Full benchmark data:** [presentation/04_BENCHMARK_RESULTS.md](presentation/04_BENCHMARK_RESULTS.md)  
+**🍎 macOS local benchmark script:** `scripts/benchmark_macos_local.py` → `benchmark_results_macOS_local/`
 
 ---
 

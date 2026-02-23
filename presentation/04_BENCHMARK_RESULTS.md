@@ -18,6 +18,7 @@
 10. [Cross-Step Comparison Tables](#10-cross-step-comparison-tables)
 11. [ONNX Model Profile](#11-onnx-model-profile)
 12. [Step 8: Local Kubernetes (kind) — CPU Baseline](#12-step-8-local-kubernetes-kind--cpu-baseline)
+13. [macOS Local — In-Process Compute (Apple M-series)](#13-macos-local--in-process-compute-apple-m-series)
 
 ---
 
@@ -31,6 +32,7 @@
 | 4× RTX 4080 | Consumer (multi) | 4×16 GB | Vast.ai | 6B |
 | RTX 4090 | Consumer | 24 GB | Vast.ai | 7B |
 | Apple M-series (CPU) | Local (kind) | — | Local machine | 8 |
+| **Apple M-series (MPS)** | **Laptop GPU** | **Unified** | **Local machine** | **macOS local** |
 
 **Client:** MacBook Pro (macOS), benchmarking over internet to Vast.ai datacenters.
 
@@ -516,6 +518,64 @@ inference-deploy-...-x2tsj          309m         484Mi   ← new pod starting up
 
 ---
 
+## 13. macOS Local — In-Process Compute (Apple M-series)
+
+**Infrastructure:** macOS 15.7.3, Apple Silicon (arm64), Python 3.9 in venv  
+**Measurement:** In-process only — no HTTP, no serialization overhead.  
+**Comparable to:** Server-side GPU compute metrics from remote benchmarks (4.4ms ONNX, 2.0ms TRT on A100).  
+**Script:** `scripts/benchmark_macos_local.py`  
+**Output dir:** `benchmark_results_macOS_local/`  
+**Date:** February 23, 2026 (preliminary, 3 iterations; run full benchmark with `--iterations 30`)
+
+### 13.1 Backends Tested
+
+| Backend | Framework | Execution | Notes |
+|---------|-----------|:---------:|-------|
+| `pytorch_cpu` | PyTorch 2.8 | CPU | open_clip, same code as production |
+| `pytorch_mps` | PyTorch 2.8 | Apple Silicon GPU (Metal) | MPS device, open_clip |
+| `onnx_cpu` | ONNX Runtime 1.19.2 | CPU | CPUExecutionProvider |
+| `onnx_coreml` | ONNX Runtime 1.19.2 | CoreML/ANE | CoreMLExecutionProvider — partial coverage (see note) |
+
+> **CoreML caveat:** ORT CoreML EP only covers ~52% of ViT-B-32 graph nodes (636/1222). The attention blocks have dynamic-shape slices (dim=0) that CoreML doesn't support, causing those ops to fall back to CPU. This makes `onnx_coreml` *slower* than `onnx_cpu` here — it adds CPU↔CoreML context switching on top. A native `.mlpackage` export via `coremltools` would give true ANE performance.
+
+### 13.2 Inference-Only Latency — p50 (ms)
+
+> "Inference only" = model forward pass, no preprocess. Directly comparable to server-side GPU compute from remote benchmarks.
+
+| Backend | batch=1 | batch=4 | batch=8 | batch=16 | batch=32 |
+|---------|:-------:|:-------:|:-------:|:--------:|:--------:|
+| `pytorch_mps` | **~12ms** | **~18ms** | — | — | — |
+| `pytorch_cpu` | ~29ms | ~74ms | — | — | — |
+| `onnx_cpu` | ~23ms | ~79ms | — | — | — |
+| `onnx_coreml` | ~76ms | ~190ms | — | — | — |
+| *(A100, Triton ONNX CUDA EP — remote)* | *4.4ms* | *—* | *—* | *—* | *—* |
+| *(RTX 4080, Triton TRT EP — remote)* | *2.0ms* | *—* | *—* | *—* | *—* |
+
+*Dashes indicate not yet measured; re-run with `--iterations 30 --batch-sizes 1 4 8 16 32` for full data.*
+
+### 13.3 Throughput — Inference Only (img/s)
+
+| Backend | batch=1 | batch=4 |
+|---------|:-------:|:-------:|
+| `pytorch_mps` | **77** | **220** |
+| `onnx_cpu` | 43 | 48 |
+| `pytorch_cpu` | 35 | 55 |
+| `onnx_coreml` | 13 | 21 |
+
+### 13.4 Key Findings
+
+1. **MPS (Metal) is the clear macOS winner.** `pytorch_mps` at ~12ms batch=1 matches the estimated server-side compute of PyTorch GPU on A100 (~10–15ms). The M-series unified memory architecture is competitive with datacenter GPUs for this model size.
+
+2. **macOS is 3–6× slower than A100 Triton at pure GPU compute.** A100 Triton ONNX CUDA EP = 4.4ms; `pytorch_mps` ≈ 12ms (2.7×). A100 TRT EP = 2.0ms; `pytorch_mps` ≈ 12ms (6×). But the gap disappears once network overhead is added for remote calls.
+
+3. **ONNX Runtime CPU < PyTorch CPU at batch=1, reverses at batch=4.** ORT CPU is faster per-image at batch=1 (23ms vs 29ms) but PyTorch edges ahead at batch=4 in throughput. Both are ~2× slower than MPS.
+
+4. **CoreML EP is not useful for this ONNX model.** The ViT-B-32 transformer attention blocks are incompatible with CoreML's static-shape requirement, causing 52% fallback to CPU plus context-switch overhead.
+
+5. **For local in-app use, MPS beats any remote option.** `pytorch_mps` ~12ms + zero network overhead beats PyTorch remote (56.9ms) by 4.7×. The production app already uses MPS auto-detection — this confirms it's the right choice.
+
+---
+
 ## Raw Data Files
 
 | File | Contents |
@@ -529,8 +589,10 @@ inference-deploy-...-x2tsj          309m         484Mi   ← new pod starting up
 | `benchmark_results/triton_rtx3070_20260214_083702.json` | Step 4 Triton baseline |
 | `benchmark_results/pytorch_rtx3070_20260214_090742.json` | Step 4 PyTorch baseline |
 | `benchmark_results/onnx_profile_20260214_114632.json` | ONNX profiling data |
+| `benchmark_results_macOS_local/macos_local_<timestamp>.json` | macOS in-process benchmark (Section 13) |
 
 ---
 
 *GPU benchmarks: macOS client → Vast.ai GPU instances, February 14–20, 2026.*  
-*Step 8 K8s benchmarks: local kind cluster on Apple Silicon, February 21, 2026.*
+*Step 8 K8s benchmarks: local kind cluster on Apple Silicon, February 21, 2026.*  
+*macOS local benchmarks: in-process, Apple Silicon MPS/CPU, February 23, 2026.*

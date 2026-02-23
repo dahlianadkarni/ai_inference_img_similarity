@@ -18,7 +18,8 @@
 9. [Step 6B: Multi-GPU Scaling Study](#9-step-6b-multi-gpu-scaling-study)
 10. [Step 7: gRPC vs HTTP Protocol Comparison](#10-step-7-grpc-vs-http-protocol-comparison)
 11. [Step 8: Local Kubernetes (kind)](#11-step-8-local-kubernetes-kind)
-12. [Key Learnings & Takeaways](#12-key-learnings--takeaways)
+12. [macOS Local: In-Process Compute (Apple Silicon)](#12-macos-local-in-process-compute-apple-silicon)
+13. [Key Learnings & Takeaways](#13-key-learnings--takeaways)
 
 ---
 
@@ -686,7 +687,84 @@ SuccessfulRescale: New size: 6; reason: cpu resource utilization above target
 
 ---
 
-## 12. Key Learnings & Takeaways
+## 12. macOS Local: In-Process Compute (Apple Silicon)
+
+### Goal
+
+All prior benchmarks measured **client-to-server** latency on remote GPU instances. This step asks: what does inference look like running entirely locally on macOS Apple Silicon, with no network hop at all?
+
+This provides a different axis of comparison — isolating pure hardware compute by removing HTTP, serialization, and network latency from the equation. The "inference only" number is directly comparable to the server-side GPU compute metrics seen in Steps 6A and 7.
+
+### Backends Tested
+
+| Backend | Framework | Execution Provider | Notes |
+|---------|-----------|:-----------------:|-------|
+| `pytorch_cpu` | PyTorch 2.8 | CPU | open_clip, same code as production service |
+| `pytorch_mps` | PyTorch 2.8 | Apple Silicon GPU (Metal) | MPS device, unified memory |
+| `onnx_cpu` | ONNX Runtime 1.19.2 | CPU | CPUExecutionProvider |
+| `onnx_coreml` | ONNX Runtime 1.19.2 | CoreML / ANE | CoreMLExecutionProvider — partial (see below) |
+
+**On Execution Providers:** Following the same pattern as CUDA EP and TensorRT EP from Steps 4–5, ONNX Runtime on macOS has a CoreML Execution Provider (CoreML EP). It offloads ONNX ops to Apple's CoreML framework, which can then delegate to the Neural Engine (ANE), Apple GPU, or CPU — analogous to how CUDA EP offloads to `cuBLAS/cuDNN` and TRT EP compiles further via TensorRT. The difference here: CoreML EP has stricter constraints on supported op shapes.
+
+### The CoreML EP Caveat
+
+The ViT-B-32 ONNX model has attention blocks that produce intermediate tensors with a dynamic dimension of 0 (an artifact of how the attention mask slicing was exported). CoreML doesn't support shapes with `dim=0`, so those ops are excluded from CoreML's graph partition:
+
+```
+CoreML supported nodes: 636 / 1,222 (52%)
+Unsupported: transformer/resblocksN/attn/Slice_output (×12)
+→ falls back to CPU
+```
+
+The result: every inference call requires 12 CPU↔CoreML context switches (one per attention block), which adds overhead on top of the CPU work. This makes `onnx_coreml` **slower than plain `onnx_cpu`** here — the opposite of what you'd hope. A native `.mlpackage` export via `coremltools` would avoid this by compiling the model for CoreML natively, but that requires a separate conversion pipeline.
+
+This mirrors the Step 5B lesson: TRT EP on A100 was actually 6.5× *slower* than ONNX CUDA EP because A100 Tensor Cores don't benefit from TRT's consumer-GPU-optimized fusion. Context matters — the same extension mechanism wins on one hardware target and loses on another.
+
+### Results (batch=1, p50, preliminary — 3 iterations)
+
+| Backend | Inference only | Total (incl. preprocess) | img/s (inf only) |
+|---------|:--------------:|:-----------------------:|:----------------:|
+| `pytorch_mps` | **~12ms** | ~14ms | **~77** |
+| `onnx_cpu` | ~23ms | ~24ms | ~43 |
+| `pytorch_cpu` | ~29ms | ~30ms | ~35 |
+| `onnx_coreml` | ~76ms† | ~76ms | ~13 |
+
+† Slower than CPU due to 52% CoreML node coverage (context-switch overhead).
+
+### Comparison to Remote GPU Benchmarks
+
+| Path | Latency | What's measured |
+|------|:-------:|----------------|
+| **MPS in-process** | **~12ms** | Pure compute — no network |
+| A100 Triton ONNX (server-side) | 4.4ms | GPU compute only |
+| A100 Triton TRT EP (server-side) | 2.0ms | GPU compute only |
+| **Remote PyTorch FastAPI** (client-side) | **56.9ms** | Compute + network + JPEG transfer |
+| Remote Triton ONNX (client-side) | 182.9ms | Compute + network + 602KB tensor |
+
+**MPS is 2.7× slower than A100 at raw compute** (12ms vs 4.4ms), but **4.7× faster end-to-end than a remote PyTorch call** (12ms vs 56.9ms) because zero network overhead dominates. The A100's compute advantage is completely erased by the internet round-trip.
+
+### What This Means for the App
+
+The production app already auto-selects the best available device on startup:
+```python
+if torch.cuda.is_available():  device = "cuda"
+elif torch.backends.mps.is_available(): device = "mps"
+else: device = "cpu"
+```
+This benchmark confirms MPS is the correct default for local macOS use — and that the entire remote GPU / Triton infrastructure is valuable for batch workloads or server deployments, not for local single-user use.
+
+### Script
+
+```bash
+# Run full macOS local benchmark (30 iterations, all batch sizes)
+source venv/bin/activate
+python scripts/benchmark_macos_local.py --iterations 30
+# Results saved to: benchmark_results_macOS_local/macos_local_<timestamp>.json
+```
+
+---
+
+## 13. Key Learnings & Takeaways
 
 ### Infrastructure Lessons
 
@@ -706,7 +784,7 @@ SuccessfulRescale: New size: 6; reason: cpu resource utilization above target
 
 | Area | Specific Skills |
 |------|----------------|
-| **ML Serving** | ONNX export, Triton config, TensorRT EP, dynamic batching tuning |
+| **ML Serving** | ONNX export, Triton config, TensorRT EP, dynamic batching tuning, CoreML EP, MPS benchmarking |
 | **Docker** | Multi-stage builds, cross-platform (ARM→x86), NVIDIA runtime, health checks |
 | **GPU Deployment** | Vast.ai provisioning, CUDA configuration, multi-GPU orchestration |
 | **Kubernetes** | kind cluster, Deployments, HPA, PDB, ResourceQuota, readiness/liveness probes |
@@ -718,8 +796,8 @@ SuccessfulRescale: New size: 6; reason: cpu resource utilization above target
 
 | Metric | Start (Step 1) | End (Step 8) |
 |--------|:-:|:-:|
-| Backends supported | 1 (local Python) | 6 (local, PyTorch API, Triton ONNX HTTP/gRPC, Triton TRT HTTP/gRPC, K8s) |
-| Deployment targets | macOS only | macOS + any cloud GPU + local K8s |
+| Backends supported | 1 (local Python) | 7 (local, PyTorch API, PyTorch MPS, Triton ONNX HTTP/gRPC, Triton TRT HTTP/gRPC, K8s) |
+| Deployment targets | macOS only | macOS (MPS/CPU in-process) + any cloud GPU + local K8s |
 | Fastest GPU compute | N/A | **2.7ms** (TRT EP gRPC on RTX 4090) |
 | Largest deployment | 1 process | 4× GPU, 5 simultaneous backends + K8s (6 pods) |
 | Documentation pages | 1 (README) | 16+ detailed technical docs |

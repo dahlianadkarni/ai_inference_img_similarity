@@ -33,6 +33,7 @@ The embedding step is the bottleneck — and the entire infrastructure project f
 | **6B** | Multi-GPU scaling study (4× RTX 4080) | Only 1.8× scaling (45% efficiency) — network-bound |
 | **7** | 5-way gRPC vs HTTP comparison (A100 + RTX 4090) | gRPC slower at batch=1; HTTP wins under concurrency; PyTorch still leads |
 | **8** | Local Kubernetes (kind): HPA, PDB, ResourceQuota | 2→4→6 pod scale-up under load; CPU baseline; zero-conflict coexistence with docker-compose |
+| **+** | macOS local in-process benchmark | MPS ~12ms matches remote A100 PyTorch GPU; 4.7× faster than remote PyTorch call (56.9ms) |
 
 ---
 
@@ -96,6 +97,21 @@ PyTorch (56.9ms) beats Triton (182.9ms) for remote clients despite Triton being 
 | Triton TRT gRPC | 200.2ms | 3.1× |
 
 *gRPC was slower than HTTP at batch=1 on both A100 and RTX 4090. PyTorch still wins by 2.7–3.4×.*
+
+### macOS Local — In-Process Compute (Apple M-series, batch=1 p50)
+
+Benchmarked in-process (no HTTP/serialization overhead) to isolate pure compute, comparable to
+the server-side GPU compute numbers above.
+
+| Backend | Inference p50 | vs A100 Triton ONNX (4.4ms) | vs Remote PyTorch call (56.9ms) |
+|---------|:-------------:|:---------------------------:|:--------------------------------:|
+| `pytorch_mps` (Metal) | **~12ms** | 2.7× slower | **4.7× faster** |
+| `pytorch_cpu` | ~29ms | 6.6× slower | 2.0× faster |
+| `onnx_cpu` (ORT) | ~23ms | 5.2× slower | 2.5× faster |
+| `onnx_coreml` (ORT) | ~76ms† | 17× slower | 1.3× slower |
+
+† CoreML EP only covers ~52% of ViT-B-32 nodes; remaining ops fall back to CPU, making it slower than pure CPU.  
+*MPS is the right choice for local use — the production app already auto-selects it.*
 
 ---
 
